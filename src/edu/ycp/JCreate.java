@@ -15,8 +15,8 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 
 package edu.ycp;
 
-import edu.ycp.RoombaModePacket.ModeCommand;
-import edu.ycp.RoombaStartPacket.StartCommand;
+import edu.ycp.JCreateModePacket.ModeCommand;
+import edu.ycp.JCreateStartPacket.StartCommand;
 import edu.ycp.comm.SerialPortManager;
 
 public class JCreate {
@@ -75,7 +75,7 @@ public class JCreate {
 	 */
 	public final void changeToSafeMode(){
 		if(currMode.equals(JCreateMode.PASSIVE) || currMode.equals(JCreateMode.FULL)){
-			serialPortMgr.writeBuffer(RoombaModePacket.generateCommand(ModeCommand.SAFE));
+			serialPortMgr.writeBuffer(JCreateModePacket.generateCommand(ModeCommand.SAFE));
 			currMode = JCreateMode.SAFE;
 		}
 		
@@ -86,7 +86,7 @@ public class JCreate {
 	 */
 	public final void changeToFullMode(){
 		if(currMode.equals(JCreateMode.PASSIVE) || currMode.equals(JCreateMode.SAFE)){
-			serialPortMgr.writeBuffer(RoombaModePacket.generateCommand(ModeCommand.FULL));
+			serialPortMgr.writeBuffer(JCreateModePacket.generateCommand(ModeCommand.FULL));
 			currMode = JCreateMode.FULL;
 		}
 		
@@ -103,7 +103,7 @@ public class JCreate {
 	
 	public final void sendStart(){
 		
-		serialPortMgr.writeBuffer(RoombaStartPacket.generateCommand(StartCommand.START));
+		serialPortMgr.writeBuffer(JCreateStartPacket.generateCommand(StartCommand.START));
 		currMode = JCreateMode.PASSIVE;
 	}
 	

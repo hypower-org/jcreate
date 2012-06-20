@@ -17,22 +17,32 @@ package edu.ycp;
 
 import java.nio.ByteBuffer;
 
-public class RoombaModePacket {
+public class JCreateStartPacket {
 
-	public static ByteBuffer generateCommand(ModeCommand cmd){
-		ByteBuffer outBuf = ByteBuffer.allocate(1);
-		outBuf.put(cmd.getOpcodeVal());
-		return outBuf;
+	public static ByteBuffer generateCommand(StartCommand cmd, byte...baudCode){
+
+		if(cmd == StartCommand.START){
+			ByteBuffer outBuf = ByteBuffer.allocate(1);
+			outBuf.put(StartCommand.START.getOpcodeVal());
+			return outBuf;
+		}
+		else{
+			ByteBuffer outBuf = ByteBuffer.allocate(2);
+			outBuf.put(StartCommand.BAUD.getOpcodeVal());
+			outBuf.put(baudCode[0]);
+			return outBuf;
+		}
+		
 	}
 	
-	public enum ModeCommand {
+	public enum StartCommand {
 
-		SAFE((byte) 131),
-		FULL((byte) 132);
+		START((byte) 128),
+		BAUD((byte) 129);
 		
 		private final byte opcodeVal;
 		
-		ModeCommand(byte val){
+		StartCommand(byte val){
 			this.opcodeVal = val;
 		}
 		
@@ -41,4 +51,20 @@ public class RoombaModePacket {
 		}
 	}
 	
+	public static void main(String[] args){
+		ByteBuffer testBuf1 = JCreateStartPacket.generateCommand(StartCommand.START);
+		ByteBuffer testBuf2 = JCreateStartPacket.generateCommand(StartCommand.BAUD, (byte)10);
+		
+		System.out.println("Test buffer 1: ");
+		for(byte b : testBuf1.array()){
+			System.out.print((int) (b & 0xFF) + " ");
+		}
+		
+		System.out.println("\nTest buffer 2: ");
+		for(byte b : testBuf2.array()){
+			System.out.print((int) (b & 0xFF)  + " ");
+		}
+		
+		
+	}
 }

@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
-import edu.ycp.RoombaStartPacket.StartCommand;
+import edu.ycp.JCreateStartPacket.StartCommand;
 import edu.ycp.comm.SerialPortManager;
 
 import gnu.io.*;
@@ -38,7 +38,7 @@ public class JCreateConnect {
 	}
 	
 	public void sendStart(){
-		serialPortMgr.writeBuffer(RoombaStartPacket.generateCommand(StartCommand.START));
+		serialPortMgr.writeBuffer(JCreateStartPacket.generateCommand(StartCommand.START));
 	}
 	
 	public static void main(String[] args){
