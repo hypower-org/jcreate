@@ -17,6 +17,7 @@ package edu.ycp.comm;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.TooManyListenersException;
 
 import gnu.io.*;
 
@@ -42,10 +43,11 @@ public class SerialPortManager implements SerialPortEventListener {
 			serialPort.setSerialPortParams(baudRate, SerialPort.DATABITS_8, 
 					SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
 			
+			// setup the event listening system for getting serial port data
+			serialPort.addEventListener(this);
+			serialPort.notifyOnDataAvailable(true);
 			serialOutStream = serialPort.getOutputStream();
 			serialInStream = serialPort.getInputStream();
-			
-			serialPort.notifyOnDataAvailable(true);
 			
 			initialized = true;
 					
@@ -57,31 +59,42 @@ public class SerialPortManager implements SerialPortEventListener {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (TooManyListenersException e) {
+			e.printStackTrace();
 		}
 	}
 
 	@Override
 	public void serialEvent(SerialPortEvent arg0) {
 		
-		System.out.println(arg0 + " happened!");
+		switch(arg0.getEventType()){
 		
-		if(arg0.equals(SerialPortEvent.DATA_AVAILABLE)){
+		case SerialPortEvent.DATA_AVAILABLE:
 			System.out.println("Data came in!");
-			int data;
-			int bufferIdx = 0;
 			
 			try {
 				
-				while( (data = this.serialInStream.read()) != -1){
-					this.inputBuffer[bufferIdx++] = (byte) data;
-				}
+				int sizeOfInput = serialInStream.available();
+				System.out.println(sizeOfInput + " bytes ready on serial input.");
 				
-				System.out.println(new String(this.inputBuffer, 0, bufferIdx));
+				// read data if it exists
+				if(sizeOfInput > 0){
+					ByteBuffer inByteBuf = ByteBuffer.allocate(sizeOfInput);
+					serialInStream.read(inByteBuf.array());
+					System.out.println(new String(inByteBuf.array(), 0, sizeOfInput));
+				}
+//				while( (data = this.serialInStream.read()) != -1){
+//					this.inputBuffer[bufferIdx++] = (byte) data;
+//				}
+				
+//				System.out.println(new String(this.inputBuffer, 0, bufferIdx));
 				
 			} catch (IOException e) {
 				System.err.println("Error reading from serial port stream.");
 				e.printStackTrace();
 			}
+
+			break;
 		}
 		
 	}
