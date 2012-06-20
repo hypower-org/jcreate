@@ -15,45 +15,53 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 
 package edu.ycp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-
-import edu.ycp.RoombaStartPacket.StartCommand;
-import edu.ycp.comm.SerialPortManager;
-
-import gnu.io.*;
-
-public class JCreateConnect {
+public class JCreate {
 	
-	private SerialPortManager serialPortMgr;
-	
-	public final void intialize(String serialPortName){
-		serialPortMgr = new SerialPortManager(serialPortName);
+	public enum JCreateMode {
+		OFF, PASSIVE, SAFE, FULL;
 	}
 	
-	public void disconnectRoomba(){
-		serialPortMgr.disconnectSerial();	
-	}
-	
-	public void sendStart(){
-		serialPortMgr.writeBuffer(RoombaStartPacket.generateCommand(StartCommand.START));
-	}
-	
-	public static void main(String[] args){
-		System.out.println("Try connecting to iRobot Create...");
-		
-		JCreateConnect jc = new JCreateConnect();
-		jc.intialize("/dev/ttyUSB0");
-		
-		System.out.println("...success.");
-		
-		// send a start command...
-		jc.sendStart();
-		
-		jc.disconnectRoomba();
-		
+	public enum JCreateSensorMode {
+		REQUEST, SET_FREQ;
 	}
 
+	public JCreate(String serialPortName){
+		
+	}
+	
+	/*
+	 * JCreate APIs for changing sensor data mode, i.e. request or set frequency updates
+	 */
+	
+	/*
+	 * JCreate APIs for robot interaction
+	 */
+	
+	public final void drive(){
+		
+	}
+	
+	public final void driveDirect(){
+		
+	}
+	
+	public final void toggleLEDs(){
+		
+	}
+	
+	public final void getAllSensorData(){
+		
+	}
+	
+	public final void changeToSafeMode(){
+		
+	}
+	
+	public final void changeToFullMode(){
+		
+	}
+	
+	public final JCreateMode checkMode(){
+		return JCreateMode.OFF;
+	}
 }
