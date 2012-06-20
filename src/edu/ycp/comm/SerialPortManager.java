@@ -63,6 +63,8 @@ public class SerialPortManager implements SerialPortEventListener {
 	@Override
 	public void serialEvent(SerialPortEvent arg0) {
 		
+		System.out.println(arg0 + " happened!");
+		
 		if(arg0.equals(SerialPortEvent.DATA_AVAILABLE)){
 			System.out.println("Data came in!");
 			int data;

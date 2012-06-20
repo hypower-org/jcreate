@@ -15,6 +15,7 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 
 package edu.ycp;
 
+import edu.ycp.JCreateInputPacket.InputCommand;
 import edu.ycp.JCreateModePacket.ModeCommand;
 import edu.ycp.JCreateStartPacket.StartCommand;
 import edu.ycp.comm.SerialPortManager;
@@ -44,6 +45,7 @@ public class JCreate {
 	}
 	
 	public JCreateMode getCurrMode() {
+		
 		return currMode;
 	}
 
@@ -93,6 +95,9 @@ public class JCreate {
 	}
 	
 	public final JCreateMode checkMode(){
+		
+		serialPortMgr.writeBuffer(JCreateInputPacket.generateCommand(InputCommand.SENSORS, JCreatePacketID.OI_MODE));
+		
 		return JCreateMode.OFF;
 	}
 	
@@ -114,6 +119,8 @@ public class JCreate {
 		
 		jc.sendStart();
 		System.out.println(jc.getCurrMode());
+		
+		jc.checkMode();
 		
 		jc.disconnectCreate();
 		
