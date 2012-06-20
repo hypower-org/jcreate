@@ -9,7 +9,7 @@ import edu.ycp.RoombaStartPacket.StartCommand;
 
 import gnu.io.*;
 
-public class RoombaConnect {
+public class JCreateConnect {
 	
 	private static final int roombaBaudRate = 57600;
 	private OutputStream serialOut;
@@ -55,7 +55,7 @@ public class RoombaConnect {
 		try {
 			serialOut.write(bb.array());
 		} catch (IOException e) {
-			System.err.println(e.getMessage());
+			System.err.println("Error: " + e.getMessage());
 		}
 	}
 	
@@ -64,10 +64,13 @@ public class RoombaConnect {
 	}
 	
 	public static void main(String[] args){
-		System.out.println("Try connecting to iCreate...");
+		System.out.println("Try connecting to iRobot Create...");
 		
-		RoombaConnect rc = new RoombaConnect();
-		rc.connect("/dev/ttyUSB0");
+		JCreateConnect jc = new JCreateConnect();
+		//TODO: just test code. Need to manually change depending on platform.
+//		jc.connect("/dev/ttyUSB0");
+		// Keyspan serial port on MacOSX 10.7
+		jc.connect("/dev/tty.USA19Hfa14P1.1");
 		
 		System.out.println("...success.");
 		
@@ -75,10 +78,9 @@ public class RoombaConnect {
 		//TODO: need a more elegant structure here!
 		ByteBuffer startCommand = RoombaStartPacket.generateCommand(StartCommand.START);
 		
-		rc.sendBuffer(startCommand);
+		jc.sendBuffer(startCommand);
 		
-		
-		rc.disconnectRoomba();
+		jc.disconnectRoomba();
 		
 	}
 
