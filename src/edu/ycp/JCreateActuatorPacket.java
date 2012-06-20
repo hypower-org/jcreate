@@ -15,30 +15,34 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 
 package edu.ycp;
 
-import java.nio.ByteBuffer;
+public class JCreateActuatorPacket {
 
-public class RoombaModePacket {
-
-	public static ByteBuffer generateCommand(ModeCommand cmd){
-		ByteBuffer outBuf = ByteBuffer.allocate(1);
-		outBuf.put(cmd.getOpcodeVal());
-		return outBuf;
-	}
-	
-	public enum ModeCommand {
-
-		SAFE((byte) 131),
-		FULL((byte) 132);
+	public enum ActuatorCommand {
+		
+		DRIVE((byte) 137),
+		DRIVE_DIRECT((byte) 145),
+		LEDS((byte) 139),
+		DOUT((byte) 147),
+		PWM_LOWSIDE((byte) 144),
+		LOWSIDE((byte) 138),
+		SEND_IR((byte) 151),
+		SONG((byte) 140),
+		PLAY_SONG((byte) 141),
+		SENSORS((byte) 142),
+		QUERY_LIST((byte) 149),
+		STREAM((byte) 148),
+		PAUSE_RESUME_STREAM((byte) 150);
 		
 		private final byte opcodeVal;
 		
-		ModeCommand(byte val){
+		ActuatorCommand(byte val){
 			this.opcodeVal = val;
 		}
 		
 		public byte getOpcodeVal(){
 			return opcodeVal;
 		}
+		
 	}
 	
 }

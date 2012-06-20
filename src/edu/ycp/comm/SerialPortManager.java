@@ -88,7 +88,7 @@ public class SerialPortManager implements SerialPortEventListener {
 	 * Transmits a ByteBuffer as an array of bytes out the serial port.
 	 * @param bb
 	 */
-	public final void writeBuffer(ByteBuffer bb){
+	public final void writeBuffer(ByteBuffer bb) {
 		if(this.initialized){
 			try {
 				this.serialOutStream.write(bb.array());

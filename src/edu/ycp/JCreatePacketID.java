@@ -23,7 +23,7 @@ package edu.ycp;
  * @author pjmartin
  *
  */
-public enum RoombaPacketID {
+public enum JCreatePacketID {
 
 	BUMP_AND_WHEEL((byte) 7),
 	WALL((byte) 8),
@@ -65,7 +65,7 @@ public enum RoombaPacketID {
 	
 	private final byte packetID;
 	
-	RoombaPacketID(byte id){
+	JCreatePacketID(byte id){
 		this.packetID = id;
 	}
 

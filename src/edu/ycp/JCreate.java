@@ -15,7 +15,14 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 
 package edu.ycp;
 
+import edu.ycp.RoombaModePacket.ModeCommand;
+import edu.ycp.RoombaStartPacket.StartCommand;
+import edu.ycp.comm.SerialPortManager;
+
 public class JCreate {
+	
+	private SerialPortManager serialPortMgr;
+	private JCreateMode currMode;
 	
 	public enum JCreateMode {
 		OFF, PASSIVE, SAFE, FULL;
@@ -26,9 +33,20 @@ public class JCreate {
 	}
 
 	public JCreate(String serialPortName){
+
+		initialize(serialPortName);
+		currMode = JCreateMode.OFF;
 		
 	}
+
+	private final void initialize(String serialPortName){
+		serialPortMgr = new SerialPortManager(serialPortName);
+	}
 	
+	public JCreateMode getCurrMode() {
+		return currMode;
+	}
+
 	/*
 	 * JCreate APIs for changing sensor data mode, i.e. request or set frequency updates
 	 */
@@ -36,7 +54,6 @@ public class JCreate {
 	/*
 	 * JCreate APIs for robot interaction
 	 */
-	
 	public final void drive(){
 		
 	}
@@ -53,15 +70,52 @@ public class JCreate {
 		
 	}
 	
+	/**
+	 * Function that puts the Create in Safe mode. Must be in Passive or Full mode to do so.
+	 */
 	public final void changeToSafeMode(){
+		if(currMode.equals(JCreateMode.PASSIVE) || currMode.equals(JCreateMode.FULL)){
+			serialPortMgr.writeBuffer(RoombaModePacket.generateCommand(ModeCommand.SAFE));
+			currMode = JCreateMode.SAFE;
+		}
 		
 	}
 	
+	/** 
+	 * Function that puts the Create in Full mode. Must be in Passive or Safe mode to do so.
+	 */
 	public final void changeToFullMode(){
+		if(currMode.equals(JCreateMode.PASSIVE) || currMode.equals(JCreateMode.SAFE)){
+			serialPortMgr.writeBuffer(RoombaModePacket.generateCommand(ModeCommand.FULL));
+			currMode = JCreateMode.FULL;
+		}
 		
 	}
 	
 	public final JCreateMode checkMode(){
 		return JCreateMode.OFF;
+	}
+	
+	
+	public final void disconnectCreate(){
+		serialPortMgr.disconnectSerial();	
+	}
+	
+	public final void sendStart(){
+		
+		serialPortMgr.writeBuffer(RoombaStartPacket.generateCommand(StartCommand.START));
+		currMode = JCreateMode.PASSIVE;
+	}
+	
+	public static void main(String[] args){
+		
+		System.out.println("Start a new JCreate:");
+		JCreate jc = new JCreate("/dev/ttyUSB0");
+		
+		jc.sendStart();
+		System.out.println(jc.getCurrMode());
+		
+		jc.disconnectCreate();
+		
 	}
 }
