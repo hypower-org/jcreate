@@ -18,10 +18,11 @@ package edu.ycp.comm;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.TooManyListenersException;
+import java.util.concurrent.BlockingQueue;
 
 import gnu.io.*;
 
-public class SerialPortManager implements SerialPortEventListener {
+public class SerialPortManager implements SerialPortEventListener, Runnable {
 
 	private final String serialPortName;
 	private final int baudRate = 57600; // fixed for the Create; no need to set different speeds
@@ -29,12 +30,22 @@ public class SerialPortManager implements SerialPortEventListener {
 	private InputStream serialInStream;
 	private OutputStream serialOutStream;
 	private byte[] inputBuffer = new byte[256];
+
+	private final BlockingQueue<ByteBuffer> dataQueue;
+	private final BlockingQueue<ByteBuffer> commandQueue;
 	
 	private boolean initialized = false;
 	
-	public SerialPortManager(String portName){
+	private boolean running = false;
+	private Thread mainThread;
+	
+	public SerialPortManager(String portName, BlockingQueue<ByteBuffer> dataQueue,
+			BlockingQueue<ByteBuffer> commandQueue){
 		
 		this.serialPortName = portName;
+		this.dataQueue = dataQueue;
+		this.commandQueue = commandQueue;
+		
 		CommPortIdentifier portId;
 		try {
 			
@@ -46,11 +57,11 @@ public class SerialPortManager implements SerialPortEventListener {
 			// setup the event listening system for getting serial port data
 			serialPort.addEventListener(this);
 			serialPort.notifyOnDataAvailable(true);
-//			serialPort.notifyOnOutputEmpty(true);
-			serialPort.notifyOnDSR(true);
 			
 			serialOutStream = serialPort.getOutputStream();
 			serialInStream = serialPort.getInputStream();
+			
+			startUp();
 			
 			initialized = true;
 					
@@ -67,6 +78,13 @@ public class SerialPortManager implements SerialPortEventListener {
 		}
 	}
 
+	private final void startUp(){
+		mainThread = new Thread(this);
+		mainThread.setName(SerialPortManager.class.getSimpleName());
+		mainThread.start();
+		running = true;	
+	}
+	
 	@Override
 	public void serialEvent(SerialPortEvent arg0) {
 		
@@ -94,12 +112,6 @@ public class SerialPortManager implements SerialPortEventListener {
 				e.printStackTrace();
 			}
 
-			break;
-		case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
-			System.out.println("Output buffer empty!");
-			break;
-		case SerialPortEvent.DSR:
-			System.out.println(serialPortName + " ready to communicate.");
 			break;
 		default:
 			System.out.println("Unhandled serial event.");
@@ -130,6 +142,34 @@ public class SerialPortManager implements SerialPortEventListener {
 		if(this.initialized){
 			this.serialPort.close();
 		}
+	}
+
+	@Override
+	public void run() {
+		
+		while(running){
+			try {
+				ByteBuffer outBB = ByteBuffer.allocate(4);
+				outBB.put((byte) 7);
+				outBB.put((byte) 1);
+				outBB.put((byte) 2);
+				outBB.put((byte) 3);
+				dataQueue.put(outBB);
+
+				System.out.println("command queue remaining cap: " + this.commandQueue.remainingCapacity());
+				ByteBuffer cmdBuffer = this.commandQueue.take();
+				
+				// process the cmdBuffer!
+				
+				System.out.println(Thread.currentThread().getName());
+//				Thread.sleep(50);
+				
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 	}
 	
 }

@@ -15,45 +15,26 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 
 package edu.ycp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import edu.ycp.JCreateStartPacket.StartCommand;
 import edu.ycp.comm.SerialPortManager;
 
-import gnu.io.*;
+public class CreateTest {
 
-public class JCreateConnect {
-	
-	private SerialPortManager serialPortMgr;
-	
-	public final void intialize(String serialPortName){
-		serialPortMgr = new SerialPortManager(serialPortName);
-	}
-	
-	public void disconnectRoomba(){
-		serialPortMgr.disconnectSerial();	
-	}
-	
-	public void sendStart(){
-		serialPortMgr.writeBuffer(JCreateStartPacket.generateCommand(StartCommand.START));
-	}
-	
 	public static void main(String[] args){
-		System.out.println("Try connecting to iRobot Create...");
 		
-		JCreateConnect jc = new JCreateConnect();
-		jc.intialize("/dev/ttyUSB0");
+		BlockingQueue<ByteBuffer> dataQueue = new LinkedBlockingQueue<ByteBuffer>(10);
+		BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 		
-		System.out.println("...success.");
+		CreateCommander cc = new CreateCommander(dataQueue, commandQueue);
 		
-		// send a start command...
-		jc.sendStart();
+		SerialPortManager spm = new SerialPortManager("/dev/ttyUSB0", dataQueue, commandQueue);
 		
-		jc.disconnectRoomba();
+		
+
 		
 	}
-
+	
 }
