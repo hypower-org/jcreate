@@ -46,6 +46,9 @@ public class SerialPortManager implements SerialPortEventListener {
 			// setup the event listening system for getting serial port data
 			serialPort.addEventListener(this);
 			serialPort.notifyOnDataAvailable(true);
+//			serialPort.notifyOnOutputEmpty(true);
+			serialPort.notifyOnDSR(true);
+			
 			serialOutStream = serialPort.getOutputStream();
 			serialInStream = serialPort.getInputStream();
 			
@@ -81,19 +84,25 @@ public class SerialPortManager implements SerialPortEventListener {
 				if(sizeOfInput > 0){
 					ByteBuffer inByteBuf = ByteBuffer.allocate(sizeOfInput);
 					serialInStream.read(inByteBuf.array());
-					System.out.println(new String(inByteBuf.array(), 0, sizeOfInput));
+					for(byte b : inByteBuf.array()){
+						System.out.print(b + "|");
+					}
 				}
-//				while( (data = this.serialInStream.read()) != -1){
-//					this.inputBuffer[bufferIdx++] = (byte) data;
-//				}
-				
-//				System.out.println(new String(this.inputBuffer, 0, bufferIdx));
-				
+
 			} catch (IOException e) {
 				System.err.println("Error reading from serial port stream.");
 				e.printStackTrace();
 			}
 
+			break;
+		case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
+			System.out.println("Output buffer empty!");
+			break;
+		case SerialPortEvent.DSR:
+			System.out.println(serialPortName + " ready to communicate.");
+			break;
+		default:
+			System.out.println("Unhandled serial event.");
 			break;
 		}
 		
@@ -114,18 +123,11 @@ public class SerialPortManager implements SerialPortEventListener {
 		}
 	}
 	
+	/**
+	 * Used to close out the SerialPortManager.
+	 */
 	public final void disconnectSerial(){
 		if(this.initialized){
-			//TODO: how should the serial streams be cleaned up? does it matter?
-//			try {
-//
-//				this.serialInStream.reset();
-//				this.serialOutStream.flush();
-//
-//			} catch (IOException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
 			this.serialPort.close();
 		}
 	}

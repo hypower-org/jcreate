@@ -20,33 +20,59 @@ import edu.ycp.JCreateModePacket.ModeCommand;
 import edu.ycp.JCreateStartPacket.StartCommand;
 import edu.ycp.comm.SerialPortManager;
 
-public class JCreate {
+/**
+ * Main class for interacting with the Create robot using the OI specification.
+ * 
+ * @author profmartin
+ *
+ */
+public class JCreate implements Runnable {
 	
 	private SerialPortManager serialPortMgr;
 	private JCreateMode currMode;
+	private JCreateSensorMode sensorMode;
+	
+	private boolean running;
 	
 	public enum JCreateMode {
 		OFF, PASSIVE, SAFE, FULL;
 	}
 	
 	public enum JCreateSensorMode {
-		REQUEST, SET_FREQ;
+		REQUEST, // request data individually from the Create robot  
+		SENSOR_PUSH; // get a sensor stream pushed at some set frequency
 	}
 
-	public JCreate(String serialPortName){
+	public JCreate(String serialPortName, JCreateSensorMode sensorMode){
 
-		initialize(serialPortName);
-		currMode = JCreateMode.OFF;
+		initialize(serialPortName, sensorMode);
+		
+		this.currMode = JCreateMode.OFF;
 		
 	}
 
-	private final void initialize(String serialPortName){
+	private final void initialize(String serialPortName, JCreateSensorMode sensorMode){
+		
 		serialPortMgr = new SerialPortManager(serialPortName);
+		//check to see how this Create robot will get sensor data
+		if(sensorMode == JCreateSensorMode.SENSOR_PUSH){
+			this.sensorMode = sensorMode;
+			running = true;
+		}
+		else {
+			running = false;
+		}
 	}
 	
 	public JCreateMode getCurrMode() {
 		
 		return currMode;
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
 	}
 
 	/*
@@ -115,14 +141,27 @@ public class JCreate {
 	public static void main(String[] args){
 		
 		System.out.println("Start a new JCreate:");
-		JCreate jc = new JCreate("/dev/ttyUSB0");
+		JCreate jc = new JCreate("/dev/ttyUSB0", JCreateSensorMode.REQUEST);
 		
 		jc.sendStart();
-		System.out.println(jc.getCurrMode());
-		
+
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		jc.checkMode();
 		
-		jc.disconnectCreate();
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
+		jc.disconnectCreate();
 	}
+
 }
