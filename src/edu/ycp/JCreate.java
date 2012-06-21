@@ -28,7 +28,6 @@ import edu.ycp.comm.SerialPortManager;
  */
 public class JCreate implements Runnable {
 	
-	private SerialPortManager serialPortMgr;
 	private JCreateMode currMode;
 	private JCreateSensorMode sensorMode;
 	
@@ -53,7 +52,6 @@ public class JCreate implements Runnable {
 
 	private final void initialize(String serialPortName, JCreateSensorMode sensorMode){
 		
-		serialPortMgr = new SerialPortManager(serialPortName);
 		//check to see how this Create robot will get sensor data
 		if(sensorMode == JCreateSensorMode.SENSOR_PUSH){
 			this.sensorMode = sensorMode;
@@ -103,7 +101,7 @@ public class JCreate implements Runnable {
 	 */
 	public final void changeToSafeMode(){
 		if(currMode.equals(JCreateMode.PASSIVE) || currMode.equals(JCreateMode.FULL)){
-			serialPortMgr.writeBuffer(JCreateModePacket.generateCommand(ModeCommand.SAFE));
+//			serialPortMgr.writeBuffer(JCreateModePacket.generateCommand(ModeCommand.SAFE));
 			currMode = JCreateMode.SAFE;
 		}
 		
@@ -114,7 +112,7 @@ public class JCreate implements Runnable {
 	 */
 	public final void changeToFullMode(){
 		if(currMode.equals(JCreateMode.PASSIVE) || currMode.equals(JCreateMode.SAFE)){
-			serialPortMgr.writeBuffer(JCreateModePacket.generateCommand(ModeCommand.FULL));
+//			serialPortMgr.writeBuffer(JCreateModePacket.generateCommand(ModeCommand.FULL));
 			currMode = JCreateMode.FULL;
 		}
 		
@@ -122,19 +120,19 @@ public class JCreate implements Runnable {
 	
 	public final JCreateMode checkMode(){
 		
-		serialPortMgr.writeBuffer(JCreateInputPacket.generateCommand(InputCommand.SENSORS, JCreatePacketID.OI_MODE));
+//		serialPortMgr.writeBuffer(JCreateInputPacket.generateCommand(InputCommand.SENSORS, JCreatePacketID.OI_MODE));
 		
 		return JCreateMode.OFF;
 	}
 	
 	
 	public final void disconnectCreate(){
-		serialPortMgr.disconnectSerial();	
+//		serialPortMgr.disconnectSerial();	
 	}
 	
 	public final void sendStart(){
 		
-		serialPortMgr.writeBuffer(JCreateStartPacket.generateCommand(StartCommand.START));
+//		serialPortMgr.writeBuffer(JCreateStartPacket.generateCommand(StartCommand.START));
 		currMode = JCreateMode.PASSIVE;
 	}
 	
