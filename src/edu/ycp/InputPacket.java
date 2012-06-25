@@ -17,32 +17,47 @@ package edu.ycp;
 
 import java.nio.ByteBuffer;
 
-public class JCreateStartPacket {
-
-	public static ByteBuffer generateCommand(StartCommand cmd, byte...baudCode){
-
-		if(cmd == StartCommand.START){
-			ByteBuffer outBuf = ByteBuffer.allocate(1);
-			outBuf.put(StartCommand.START.getOpcodeVal());
-			return outBuf;
+public class InputPacket {
+	
+	public static ByteBuffer generateCommand(InputCommand inCmd, PacketID...pids){
+		
+		ByteBuffer outBuf;
+		switch( inCmd ) {
+			case SENSORS:
+				outBuf = ByteBuffer.allocate(2);
+				outBuf.put(inCmd.getOpcodeVal());
+				outBuf.put(pids[0].getPacketID());
+				break;
+				
+			case QUERY_LIST:
+				outBuf = ByteBuffer.allocate(2);
+				break;
+				
+			case STREAM:
+				outBuf = ByteBuffer.allocate(2);
+				break;
+				
+			case PAUSE_RESUME_STREAM:
+				outBuf = ByteBuffer.allocate(2);
+				break;
+			default:
+				outBuf = null;
+				break;
 		}
-		else{
-			ByteBuffer outBuf = ByteBuffer.allocate(2);
-			outBuf.put(StartCommand.BAUD.getOpcodeVal());
-			outBuf.put(baudCode[0]);
-			return outBuf;
-		}
+		return outBuf;
 		
 	}
 	
-	public enum StartCommand {
-
-		START((byte) 128),
-		BAUD((byte) 129);
+	public enum InputCommand {
+		
+		SENSORS((byte) 142),
+		QUERY_LIST((byte) 149),
+		STREAM((byte) 148),
+		PAUSE_RESUME_STREAM((byte) 150);
 		
 		private final byte opcodeVal;
 		
-		StartCommand(byte val){
+		InputCommand(byte val){
 			this.opcodeVal = val;
 		}
 		
@@ -50,21 +65,15 @@ public class JCreateStartPacket {
 			return opcodeVal;
 		}
 	}
-	
+
 	public static void main(String[] args){
-		ByteBuffer testBuf1 = JCreateStartPacket.generateCommand(StartCommand.START);
-		ByteBuffer testBuf2 = JCreateStartPacket.generateCommand(StartCommand.BAUD, (byte)10);
 		
-		System.out.println("Test buffer 1: ");
-		for(byte b : testBuf1.array()){
-			System.out.print((int) (b & 0xFF) + " ");
+		ByteBuffer bb = InputPacket.generateCommand(InputCommand.SENSORS, PacketID.OI_MODE);
+		
+		for(byte b : bb.array()){
+			System.out.println(b);
 		}
-		
-		System.out.println("\nTest buffer 2: ");
-		for(byte b : testBuf2.array()){
-			System.out.print((int) (b & 0xFF)  + " ");
-		}
-		
 		
 	}
+	
 }

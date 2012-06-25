@@ -19,9 +19,9 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import edu.ycp.JCreateInputPacket.InputCommand;
-import edu.ycp.JCreateModePacket.ModeCommand;
-import edu.ycp.JCreateStartPacket.StartCommand;
+import edu.ycp.InputPacket.InputCommand;
+import edu.ycp.ModePacket.ModeCommand;
+import edu.ycp.StartPacket.StartCommand;
 import edu.ycp.comm.SerialPortManager;
 
 /**

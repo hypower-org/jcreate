@@ -15,63 +15,28 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 
 package edu.ycp;
 
-import java.nio.ByteBuffer;
+public class ActuatorPacket {
 
-public class JCreateInputPacket {
-	
-	public static ByteBuffer generateCommand(InputCommand inCmd, JCreatePacketID...pids){
+	public enum ActuatorCommand {
 		
-		ByteBuffer outBuf;
-		switch( inCmd ) {
-			case SENSORS:
-				outBuf = ByteBuffer.allocate(2);
-				outBuf.put(inCmd.getOpcodeVal());
-				outBuf.put(pids[0].getPacketID());
-				break;
-				
-			case QUERY_LIST:
-				outBuf = ByteBuffer.allocate(2);
-				break;
-				
-			case STREAM:
-				outBuf = ByteBuffer.allocate(2);
-				break;
-				
-			case PAUSE_RESUME_STREAM:
-				outBuf = ByteBuffer.allocate(2);
-				break;
-			default:
-				outBuf = null;
-				break;
-		}
-		return outBuf;
-		
-	}
-	
-	public enum InputCommand {
-		
-		SENSORS((byte) 142),
-		QUERY_LIST((byte) 149),
-		STREAM((byte) 148),
-		PAUSE_RESUME_STREAM((byte) 150);
+		DRIVE((byte) 137),
+		DRIVE_DIRECT((byte) 145),
+		LEDS((byte) 139),
+		DOUT((byte) 147),
+		PWM_LOWSIDE((byte) 144),
+		LOWSIDE((byte) 138),
+		SEND_IR((byte) 151),
+		SONG((byte) 140),
+		PLAY_SONG((byte) 141);
 		
 		private final byte opcodeVal;
 		
-		InputCommand(byte val){
+		ActuatorCommand(byte val){
 			this.opcodeVal = val;
 		}
 		
 		public byte getOpcodeVal(){
 			return opcodeVal;
-		}
-	}
-
-	public static void main(String[] args){
-		
-		ByteBuffer bb = JCreateInputPacket.generateCommand(InputCommand.SENSORS, JCreatePacketID.OI_MODE);
-		
-		for(byte b : bb.array()){
-			System.out.println(b);
 		}
 		
 	}

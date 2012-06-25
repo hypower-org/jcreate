@@ -23,7 +23,7 @@ package edu.ycp;
  * @author pjmartin
  *
  */
-public enum JCreatePacketID {
+public enum PacketID {
 
 	BUMP_AND_WHEEL((byte) 7),
 	WALL((byte) 8),
@@ -65,7 +65,7 @@ public enum JCreatePacketID {
 	
 	private final byte packetID;
 	
-	JCreatePacketID(byte id){
+	PacketID(byte id){
 		this.packetID = id;
 	}
 
