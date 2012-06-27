@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.TooManyListenersException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import edu.ycp.CreateRobot.CreateMode;
 import edu.ycp.InputPacket.InputCommand;
@@ -38,7 +39,8 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	private InputStream serialInStream;
 	private OutputStream serialOutStream;
 
-	private final int updatePeriod;		// in ms
+	private final long updatePeriod;		// in ms
+	private final long MIN_BLOCK_TIME = 30;
 	
 	private final BlockingQueue<ByteBuffer> returnQueue;
 	private final BlockingQueue<ByteBuffer> commandQueue;
@@ -48,7 +50,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	private volatile boolean stopRequested;
 	private Thread mainThread;
 	
-	public CreateHardwareManager(String portName, int updatePeriod, CreateMode desMode, BlockingQueue<ByteBuffer> retQueue,
+	public CreateHardwareManager(String portName, long updatePeriod, CreateMode desMode, BlockingQueue<ByteBuffer> retQueue,
 			BlockingQueue<ByteBuffer> commandQueue){
 		
 		this.serialPortName = portName;
@@ -75,7 +77,6 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 			
 			// put robot into desired mode by creating mode packet
 			writeBuffer(StartPacket.generateCommand(StartCommand.START));
-//			System.out.println(CreateHardwareManager.class.getCanonicalName() + " sent start command.");
 			try {
 				Thread.sleep(30);
 			} catch (InterruptedException e) {
@@ -119,7 +120,6 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		switch(arg0.getEventType()){
 		
 		case SerialPortEvent.DATA_AVAILABLE:
-			System.out.println("Data came in!");
 			
 			try {
 				
@@ -190,16 +190,26 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 				ByteBuffer dataPullBB = ByteBuffer.allocate(2);
 				dataPullBB.put(InputCommand.SENSORS.getOpcodeVal());
 				dataPullBB.put((byte) 6);	// request all data from Create
-//				sendCommand(dataPullBB);
 				writeBuffer(dataPullBB);
-				
-				handleCommand();
+
+				long queueBlockStart = System.currentTimeMillis();
+				ByteBuffer cmdBB = this.commandQueue.poll(MIN_BLOCK_TIME, TimeUnit.MILLISECONDS);
+				long queueBlockEnd = System.currentTimeMillis();
+				if(cmdBB != null){
+					writeBuffer(cmdBB);
+				}
 								
-				// sleep for required update period
-				Thread.sleep(this.updatePeriod);
-				
-				System.out.println("Woke up!");
-				
+				// compute sleep time
+				long queueTotalTime = queueBlockEnd - queueBlockStart;
+				if((this.updatePeriod - queueTotalTime) < 0){
+					System.out.println(Thread.currentThread().getName() + " sleeping for " + (this.updatePeriod));
+					Thread.sleep(this.updatePeriod);
+				}
+				else{
+					System.out.println(Thread.currentThread().getName() + " sleeping for " + (this.updatePeriod - queueTotalTime));
+					Thread.sleep(this.updatePeriod - queueTotalTime);
+				}
+								
 			} catch (InterruptedException e) {
 				System.out.println("Stopping CreateHardwareManager...");
 				this.disconnectSerial();
@@ -216,6 +226,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		try {
 			System.out.println("DEBUG: sending command.");
 			writeBuffer(this.commandQueue.take());
+			
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 			System.err.println(Thread.currentThread().getName() + " Error: interrupted during command transmission.");
@@ -238,21 +249,21 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	
 	public static void main(String[] args){
 
-		final BlockingQueue<ByteBuffer> returnQueue = new LinkedBlockingQueue<ByteBuffer>(10);
+		final BlockingQueue<ByteBuffer> returnQueue = new LinkedBlockingQueue<ByteBuffer>(4);
 		final BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 
 		CreateHardwareManager chm = new CreateHardwareManager("/dev/ttyUSB0", 500, CreateMode.FULL, returnQueue, commandQueue);
 		
 		while(!chm.isInitialized());
 		
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		try {
+//			Thread.sleep(5000);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 		
-		chm.requestStop();
+		while(true);
 		
 	}
 }
