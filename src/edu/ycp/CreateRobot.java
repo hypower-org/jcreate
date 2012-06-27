@@ -86,7 +86,7 @@ public class CreateRobot implements Runnable {
 		final BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 
 		commander = new CreateCommander(dataQueue, commandQueue);
-		serialPortManager = new CreateHardwareManager(serialPortName, 100, dataQueue, commandQueue);
+		serialPortManager = new CreateHardwareManager(serialPortName, 100, CreateMode.SAFE, dataQueue, commandQueue);
 
 		// check to make sure the update period is not less allowable by Create robot.
 		if(updatePeriod < MIN_UPDATE_PERIOD){

@@ -21,8 +21,11 @@ import java.util.TooManyListenersException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import edu.ycp.CreateRobot.CreateMode;
+import edu.ycp.InputPacket.InputCommand;
 import edu.ycp.ModePacket;
 import edu.ycp.StartPacket;
+import edu.ycp.ModePacket.ModeCommand;
 import edu.ycp.StartPacket.StartCommand;
 
 import gnu.io.*;
@@ -34,7 +37,6 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	private SerialPort serialPort;
 	private InputStream serialInStream;
 	private OutputStream serialOutStream;
-//	private byte[] inputBuffer = new byte[256];
 
 	private final int updatePeriod;		// in ms
 	
@@ -46,7 +48,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	private volatile boolean stopRequested;
 	private Thread mainThread;
 	
-	public CreateHardwareManager(String portName, int updatePeriod, BlockingQueue<ByteBuffer> retQueue,
+	public CreateHardwareManager(String portName, int updatePeriod, CreateMode desMode, BlockingQueue<ByteBuffer> retQueue,
 			BlockingQueue<ByteBuffer> commandQueue){
 		
 		this.serialPortName = portName;
@@ -59,7 +61,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		CommPortIdentifier portId;
 		try {
 			
-			portId = CommPortIdentifier.getPortIdentifier(portName);
+			portId = CommPortIdentifier.getPortIdentifier(serialPortName);
 			serialPort = (SerialPort) portId.open("CreateHardwareManager", baudRate);
 			serialPort.setSerialPortParams(baudRate, SerialPort.DATABITS_8, 
 					SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
@@ -71,9 +73,25 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 			serialOutStream = serialPort.getOutputStream();
 			serialInStream = serialPort.getInputStream();
 			
-			startUp();
+			// put robot into desired mode by creating mode packet
+			writeBuffer(StartPacket.generateCommand(StartCommand.START));
+//			System.out.println(CreateHardwareManager.class.getCanonicalName() + " sent start command.");
+			try {
+				Thread.sleep(30);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			if(desMode == CreateMode.FULL){
+				writeBuffer(ModePacket.generateCommand(ModeCommand.FULL));
+			}
+			else{
+				writeBuffer(ModePacket.generateCommand(ModeCommand.SAFE));
+			}
 			
 			initialized = true;
+
+			startManager();
+			
 					
 		} catch (NoSuchPortException e) {
 			e.printStackTrace();
@@ -88,7 +106,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		}
 	}
 
-	private final void startUp(){
+	private final void startManager(){
 		stopRequested = false;	
 		mainThread = new Thread(this);
 		mainThread.setName(CreateHardwareManager.class.getSimpleName());
@@ -106,7 +124,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 			try {
 				
 				int sizeOfInput = serialInStream.available();
-				System.out.println(sizeOfInput + " bytes ready on serial input.");
+				System.out.println(Thread.currentThread().getName() + ": " + sizeOfInput + " bytes ready on serial input.");
 				
 				// read data if it exists
 				if(sizeOfInput > 0){
@@ -136,15 +154,13 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	 * @param bb
 	 */
 	private final void writeBuffer(ByteBuffer bb) {
-		if(this.initialized){
-//			try {
-				System.out.println("writing buffer");
-				// this.serialOutStream.write(bb.array());
-				
-//			} catch (IOException e) {
-//				System.err.println("Error writing byte array to serial port!");
-//				e.printStackTrace();
-//			}
+		try {
+			System.out.println(Thread.currentThread().getName() + " writing buffer");
+			this.serialOutStream.write(bb.array());
+			
+		} catch (IOException e) {
+			System.err.println("Error writing byte array to serial port!");
+			e.printStackTrace();
 		}
 	}
 	
@@ -171,19 +187,14 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		while(!stopRequested){
 			try {
 
-				// TODO: place data command in queue
+				ByteBuffer dataPullBB = ByteBuffer.allocate(2);
+				dataPullBB.put(InputCommand.SENSORS.getOpcodeVal());
+				dataPullBB.put((byte) 6);	// request all data from Create
+//				sendCommand(dataPullBB);
+				writeBuffer(dataPullBB);
 				
 				handleCommand();
-				
-				//				ByteBuffer outBB = ByteBuffer.allocate(4);
-//				outBB.put((byte) 7);
-//				outBB.put((byte) 1);
-//				outBB.put((byte) 2);
-//				outBB.put((byte) 3);
-//				returnQueue.put(outBB);
-//				ByteBuffer cmdBuffer = this.commandQueue.take();
-//
-				
+								
 				// sleep for required update period
 				Thread.sleep(this.updatePeriod);
 				
@@ -212,11 +223,16 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	}
 	
 	public final void sendCommand(ByteBuffer inCommand) {
-		try {
-			this.commandQueue.put(inCommand);
-		} catch (InterruptedException e) {
-			System.err.println(Thread.currentThread().getName() + " interrupted during sendCommand()");
-			System.err.println(e.getMessage());
+		if(initialized){
+			try {
+				this.commandQueue.put(inCommand);
+			} catch (InterruptedException e) {
+				System.err.println(Thread.currentThread().getName() + " interrupted during sendCommand()");
+				System.err.println(e.getMessage());
+			}
+		}
+		else{
+			System.out.println("Wait! " + CreateHardwareManager.class.getCanonicalName() + " not ready.");
 		}
 	}
 	
@@ -225,11 +241,9 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		final BlockingQueue<ByteBuffer> returnQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 		final BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 
-		CreateHardwareManager chm = new CreateHardwareManager("/dev/ttyUSB0", 500, returnQueue, commandQueue);
+		CreateHardwareManager chm = new CreateHardwareManager("/dev/ttyUSB0", 500, CreateMode.FULL, returnQueue, commandQueue);
 		
 		while(!chm.isInitialized());
-		
-		chm.sendCommand(StartPacket.generateCommand(StartCommand.START));
 		
 		try {
 			Thread.sleep(5000);
