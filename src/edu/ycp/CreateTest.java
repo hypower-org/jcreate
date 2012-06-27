@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import edu.ycp.comm.SerialPortManager;
+import edu.ycp.comm.CreateHardwareManager;
 
 public class CreateTest {
 
@@ -30,7 +30,7 @@ public class CreateTest {
 		
 		CreateCommander cc = new CreateCommander(dataQueue, commandQueue);
 		
-		SerialPortManager spm = new SerialPortManager("/dev/ttyUSB0", dataQueue, commandQueue);
+//		CreateHardwareManager spm = new CreateHardwareManager("/dev/ttyUSB0", dataQueue, commandQueue);
 		
 		
 

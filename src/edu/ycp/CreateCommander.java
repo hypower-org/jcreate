@@ -18,7 +18,7 @@ package edu.ycp;
 import java.nio.*;
 import java.util.concurrent.BlockingQueue;
 
-import edu.ycp.comm.SerialPortManager;
+import edu.ycp.comm.CreateHardwareManager;
 
 public class CreateCommander implements Runnable {
 

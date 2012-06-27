@@ -22,7 +22,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import edu.ycp.InputPacket.InputCommand;
 import edu.ycp.ModePacket.ModeCommand;
 import edu.ycp.StartPacket.StartCommand;
-import edu.ycp.comm.SerialPortManager;
+import edu.ycp.comm.CreateHardwareManager;
 
 /**
  * Main class for interacting with the Create robot using the OI specification.
@@ -37,7 +37,7 @@ public class CreateRobot implements Runnable {
 	private final int MIN_UPDATE_PERIOD = 20;	//note, OI docs say 15 ms - I use 20 ms just in case
 		
 	private final CreateCommander commander;
-	private final SerialPortManager serialPortManager;
+	private final CreateHardwareManager serialPortManager;
 	
 	/*
 	 * Private, volatile data members for outside access.
@@ -86,7 +86,7 @@ public class CreateRobot implements Runnable {
 		final BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 
 		commander = new CreateCommander(dataQueue, commandQueue);
-		serialPortManager = new SerialPortManager(serialPortName, dataQueue, commandQueue);
+		serialPortManager = new CreateHardwareManager(serialPortName, 100, dataQueue, commandQueue);
 
 		// check to make sure the update period is not less allowable by Create robot.
 		if(updatePeriod < MIN_UPDATE_PERIOD){
