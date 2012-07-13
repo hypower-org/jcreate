@@ -15,8 +15,15 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 
 package edu.ycp;
 
+import java.nio.ByteBuffer;
+
 public class ActuatorPacket {
 
+	// TODO: implement!
+	public static ByteBuffer generateCommand(ActuatorCommand cmd){
+		return ByteBuffer.allocate(1);
+	}
+	
 	public enum ActuatorCommand {
 		
 		DRIVE((byte) 137),

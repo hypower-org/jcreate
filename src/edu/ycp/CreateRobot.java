@@ -58,16 +58,14 @@ public class CreateRobot implements Runnable {
 	private volatile float batteryVoltage;
 	private volatile float batteryCurrent;
 	private volatile float batteryCharge;
-	 
 	
-	
-	private boolean running;
-	
+	private boolean running;	
 	private Thread mainThread;
 	
 	public enum CreateMode {
 		OFF, PASSIVE, SAFE, FULL;
 	}
+	
 	/**
 	 * Creates a robot at serialPortName that updates local sensor data at the period of updatePeriod
 	 * (in ms) with the robot operating in desired initMode.
