@@ -83,7 +83,8 @@ public class CreateRobot implements Runnable {
 		final BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 
 		hardwareManager = new CreateHardwareManager(serialPortName, updatePeriod, CreateMode.SAFE, dataQueue, commandQueue);
-
+		while(!hardwareManager.isInitialized());
+		
 		// TODO: implement mode initialization
 		currCreateMode = CreateMode.OFF;
 		
@@ -107,7 +108,9 @@ public class CreateRobot implements Runnable {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				this.hardwareManager.requestStop();
+				Thread.currentThread().interrupt();
+				System.out.println("CreateRobot stopped.");
 			}
 		}
 	}
@@ -227,16 +230,27 @@ public class CreateRobot implements Runnable {
 		return batteryCharge;
 	}
 
-	public boolean isRunning() {
-		return running;
+	public final void requestStop() {		
+		stopRequested = true;
+		if(mainThread != null){
+			mainThread.interrupt();
+		}
 	}
 
 	public static void main(String[] args){
 		
-		System.out.println("Start a new JCreate:");
-		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 100, CreateMode.SAFE);
+		System.out.println("Start a new CreateRobot:");
+		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 250, CreateMode.SAFE);
 		
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
+		robot.requestStop();
 
 	}
+
 }

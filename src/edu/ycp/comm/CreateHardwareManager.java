@@ -102,10 +102,9 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 				writeBuffer(ModePacket.generateCommand(ModeCommand.SAFE));
 			}
 			
-			initialized = true;
-
 			startManager();
-			
+
+			initialized = true;
 					
 		} catch (NoSuchPortException e) {
 			e.printStackTrace();
@@ -225,9 +224,9 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 				}
 								
 			} catch (InterruptedException e) {
-				System.out.println("Stopping CreateHardwareManager...");
 				this.disconnectSerial();
 				Thread.currentThread().interrupt();
+				System.out.println("CreateHardwareManager stopped.");
 			}
 		}
 		
