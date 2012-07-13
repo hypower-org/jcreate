@@ -27,11 +27,7 @@ public class CreateTest {
 		
 		BlockingQueue<ByteBuffer> dataQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 		BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
-		
-		CreateCommander cc = new CreateCommander(dataQueue, commandQueue);
-		
-//		CreateHardwareManager spm = new CreateHardwareManager("/dev/ttyUSB0", dataQueue, commandQueue);
-		
+				
 		
 
 		
