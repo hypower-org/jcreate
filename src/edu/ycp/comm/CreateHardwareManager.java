@@ -31,6 +31,12 @@ import edu.ycp.StartPacket.StartCommand;
 
 import gnu.io.*;
 
+/**
+ * This class manages the serial connection to the iRobot Create robot. It runs within a thread and communicates
+ * with the CreateRobot class via two BlockingQueue objects.
+ * @author pjmartin
+ *
+ */
 public class CreateHardwareManager implements SerialPortEventListener, Runnable {
 
 	private final String serialPortName;
@@ -55,7 +61,14 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		
 		this.serialPortName = portName;
 		
-		this.updatePeriod = updatePeriod;
+		// check to make sure the update period is not less allowable by Create robot.
+		if(updatePeriod < this.MIN_BLOCK_TIME){
+			this.updatePeriod = this.MIN_BLOCK_TIME;
+			System.err.println("WARNING: desired update period too small. Currently set to minimum: " + this.MIN_BLOCK_TIME + "ms");
+		}
+		else{
+			this.updatePeriod = updatePeriod;
+		}
 		
 		this.returnQueue = retQueue;
 		this.commandQueue = commandQueue;
@@ -115,7 +128,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	}
 	
 	@Override
-	public void serialEvent(SerialPortEvent arg0) {
+	public final void serialEvent(SerialPortEvent arg0) {
 		
 		switch(arg0.getEventType()){
 		
@@ -182,7 +195,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	}
 
 	@Override
-	public void run() {
+	public final void run() {
 		
 		while(!stopRequested){
 			try {
@@ -192,6 +205,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 				dataPullBB.put((byte) 6);	// request all data from Create
 				writeBuffer(dataPullBB);
 
+				// grab the most recent command to the Create from the commandQueue
 				long queueBlockStart = System.currentTimeMillis();
 				ByteBuffer cmdBB = this.commandQueue.poll(MIN_BLOCK_TIME, TimeUnit.MILLISECONDS);
 				long queueBlockEnd = System.currentTimeMillis();
@@ -203,7 +217,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 				long queueTotalTime = queueBlockEnd - queueBlockStart;
 				if((this.updatePeriod - queueTotalTime) < 0){
 					System.out.println(Thread.currentThread().getName() + " sleeping for " + (this.updatePeriod));
-					Thread.sleep(this.updatePeriod);
+					Thread.sleep(this.MIN_BLOCK_TIME);
 				}
 				else{
 					System.out.println(Thread.currentThread().getName() + " sleeping for " + (this.updatePeriod - queueTotalTime));
@@ -217,20 +231,6 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 			}
 		}
 		
-	}
-
-	/**
-	 * Inspects command queue for new command, sends it out the serial port
-	 */
-	private final void handleCommand() {
-		try {
-			System.out.println("DEBUG: sending command.");
-			writeBuffer(this.commandQueue.take());
-			
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			System.err.println(Thread.currentThread().getName() + " Error: interrupted during command transmission.");
-		}
 	}
 	
 	public final void sendCommand(ByteBuffer inCommand) {
@@ -249,21 +249,21 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	
 	public static void main(String[] args){
 
-		final BlockingQueue<ByteBuffer> returnQueue = new LinkedBlockingQueue<ByteBuffer>(4);
+		final BlockingQueue<ByteBuffer> returnQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 		final BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 
 		CreateHardwareManager chm = new CreateHardwareManager("/dev/ttyUSB0", 500, CreateMode.FULL, returnQueue, commandQueue);
 		
 		while(!chm.isInitialized());
 		
-//		try {
-//			Thread.sleep(5000);
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
-		while(true);
+//		while(true);
 		
 	}
 }

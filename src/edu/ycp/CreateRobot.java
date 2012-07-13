@@ -33,11 +33,9 @@ import edu.ycp.comm.CreateHardwareManager;
 public class CreateRobot implements Runnable {
 	
 	private CreateMode currCreateMode;
-	private final int sensorUpdatePeriod;		// in ms!
-	private final int MIN_UPDATE_PERIOD = 20;	//note, OI docs say 15 ms - I use 20 ms just in case
+	private final int MIN_UPDATE_PERIOD = 30;	//note, OI docs say 15 ms - I use 30 ms just in case
 		
-	private final CreateCommander commander;
-	private final CreateHardwareManager serialPortManager;
+	private final CreateHardwareManager hardwareManager;
 	
 	/*
 	 * Private, volatile data members for outside access.
@@ -85,19 +83,8 @@ public class CreateRobot implements Runnable {
 		final BlockingQueue<ByteBuffer> dataQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 		final BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 
-		commander = new CreateCommander(dataQueue, commandQueue);
-		serialPortManager = new CreateHardwareManager(serialPortName, 100, CreateMode.SAFE, dataQueue, commandQueue);
+		hardwareManager = new CreateHardwareManager(serialPortName, updatePeriod, CreateMode.SAFE, dataQueue, commandQueue);
 
-		// check to make sure the update period is not less allowable by Create robot.
-		if(updatePeriod < MIN_UPDATE_PERIOD){
-			this.sensorUpdatePeriod = this.MIN_UPDATE_PERIOD;
-		}
-		else{
-			this.sensorUpdatePeriod = updatePeriod;	
-		}
-		
-
-		// attempt to change the mode to desired initMode
 		// TODO: implement mode initialization
 		currCreateMode = CreateMode.OFF;
 		
@@ -133,26 +120,12 @@ public class CreateRobot implements Runnable {
 	 * Function that puts the Create in Safe mode. Must be in Passive or Full mode to do so.
 	 */
 	public final void changeToSafeMode(){
-		if(currCreateMode.equals(CreateMode.PASSIVE) || currCreateMode.equals(CreateMode.FULL)){
-			
-			// TODO: use new threading arch
-			
-			currCreateMode = CreateMode.SAFE;
-		}
-		
 	}
 	
 	/** 
 	 * Function that puts the Create in Full mode. Must be in Passive or Safe mode to do so.
 	 */
 	public final void changeToFullMode(){
-		if(currCreateMode.equals(CreateMode.PASSIVE) || currCreateMode.equals(CreateMode.SAFE)){
-			
-			//TODO: use new threading arch
-			
-			currCreateMode = CreateMode.FULL;
-		}
-		
 	}
 	
 	private final CreateMode checkMode(){		
@@ -160,19 +133,6 @@ public class CreateRobot implements Runnable {
 	}
 	
 	
-	public final void disconnectCreate(){
-//		serialPortMgr.disconnectSerial();	
-	}
-	
-//	public final void sendStart(){
-//		
-////		serialPortMgr.writeBuffer(JCreateStartPacket.generateCommand(StartCommand.START));
-//		
-//		//TODO: use new threading arch
-//		
-//		currCreateMode = CreateMode.PASSIVE;
-//	}
-
 	public float getReqVelocity() {
 		return reqVelocity;
 	}
@@ -242,24 +202,7 @@ public class CreateRobot implements Runnable {
 		System.out.println("Start a new JCreate:");
 		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 100, CreateMode.SAFE);
 		
-//		robot.sendStart();
-//
-//		try {
-//			Thread.sleep(100);
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-
-//		jc.checkMode();
-//		
-//		try {
-//			Thread.sleep(100);
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 		
-//		jc.disconnectCreate();
+
 	}
 }
