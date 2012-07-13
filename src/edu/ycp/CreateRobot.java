@@ -37,6 +37,9 @@ public class CreateRobot implements Runnable {
 		
 	private final CreateHardwareManager hardwareManager;
 	
+	private boolean stopRequested;	
+	private Thread mainThread;
+	
 	/*
 	 * Private, volatile data members for outside access.
 	 */
@@ -59,16 +62,14 @@ public class CreateRobot implements Runnable {
 	private volatile float batteryCurrent;
 	private volatile float batteryCharge;
 	
-	private boolean running;	
-	private Thread mainThread;
-	
 	public enum CreateMode {
 		OFF, PASSIVE, SAFE, FULL;
 	}
 	
 	/**
 	 * Creates a robot at serialPortName that updates local sensor data at the period of updatePeriod
-	 * (in ms) with the robot operating in desired initMode.
+	 * (in ms) with the robot operating in desired initMode. This class is the main interface to the underlying iRobot
+	 * Create.
 	 * 
 	 * @param serialPortName
 	 * @param updatePeriod
@@ -86,17 +87,34 @@ public class CreateRobot implements Runnable {
 		// TODO: implement mode initialization
 		currCreateMode = CreateMode.OFF;
 		
+		startRobot();
+		
+	}
+
+	private final void startRobot(){
+		stopRequested = false;		
+		this.mainThread = new Thread(this);
+		mainThread.setName(CreateRobot.class.getSimpleName());
+		mainThread.start();
+	}
+	
+	@Override
+	public void run() {
+		
+		//TODO: determine what needs to run at wakeup.
+		while(!stopRequested){
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public CreateMode getCurrCreateMode() {
 		
 		return currCreateMode;
-	}
-
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		
 	}
 
 	/*
@@ -113,6 +131,24 @@ public class CreateRobot implements Runnable {
 	public final void toggleLEDs(){
 		
 	}
+	
+	public final void setDigitalOuts(){
+		
+	}
+	
+	public final void setPWMLowSideDrivers(){
+		
+	}
+	
+	public final void setLowSideDrivers(){
+		
+	}
+	
+	public final void sendIR(){
+		
+	}
+	
+	//NOTE: songs not currently planned for implementation
 	
 	/**
 	 * Function that puts the Create in Safe mode. Must be in Passive or Full mode to do so.

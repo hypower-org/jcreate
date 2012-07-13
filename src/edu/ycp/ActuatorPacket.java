@@ -32,9 +32,10 @@ public class ActuatorPacket {
 		DOUT((byte) 147),
 		PWM_LOWSIDE((byte) 144),
 		LOWSIDE((byte) 138),
-		SEND_IR((byte) 151),
-		SONG((byte) 140),
-		PLAY_SONG((byte) 141);
+		SEND_IR((byte) 151);
+		//NOTE: songs not currently planned for implementation
+//		SONG((byte) 140),
+//		PLAY_SONG((byte) 141);
 		
 		private final byte opcodeVal;
 		
