@@ -36,6 +36,9 @@ public class CreateRobot implements Runnable {
 	private final int MIN_UPDATE_PERIOD = 30;	//note, OI docs say 15 ms - I use 30 ms just in case
 		
 	private final CreateHardwareManager hardwareManager;
+	final BlockingQueue<ByteBuffer> dataQueue;
+	final BlockingQueue<ByteBuffer> commandQueue;
+	final SensorDataParser dataParser;
 	
 	private boolean stopRequested;	
 	private Thread mainThread;
@@ -79,14 +82,16 @@ public class CreateRobot implements Runnable {
 
 		//TODO: consider making a factory!
 		
-		final BlockingQueue<ByteBuffer> dataQueue = new LinkedBlockingQueue<ByteBuffer>(10);
-		final BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
-
+		dataQueue = new LinkedBlockingQueue<ByteBuffer>();
+		commandQueue = new LinkedBlockingQueue<ByteBuffer>();
+		
 		hardwareManager = new CreateHardwareManager(serialPortName, updatePeriod, CreateMode.SAFE, dataQueue, commandQueue);
 		while(!hardwareManager.isInitialized());
 		
 		// TODO: implement mode initialization
-		currCreateMode = CreateMode.OFF;
+		currCreateMode = initMode;
+		
+		dataParser = new SensorDataParser();
 		
 		startRobot();
 		
@@ -105,7 +110,15 @@ public class CreateRobot implements Runnable {
 		//TODO: determine what needs to run at wakeup.
 		while(!stopRequested){
 			try {
-				Thread.sleep(10);
+				Thread.sleep(MIN_UPDATE_PERIOD);
+				// consume a ByteBuffer from the incoming queue
+				ByteBuffer incomingBuf = this.dataQueue.take();
+				System.out.println(Thread.currentThread().getName() + " consumed incoming data.");
+				// parse the sensor data
+				if(this.dataParser.parseData(incomingBuf) != null){
+					// populate all volatile variables using the new SensorData object
+				}
+				
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				this.hardwareManager.requestStop();
@@ -152,23 +165,6 @@ public class CreateRobot implements Runnable {
 	}
 	
 	//NOTE: songs not currently planned for implementation
-	
-	/**
-	 * Function that puts the Create in Safe mode. Must be in Passive or Full mode to do so.
-	 */
-	public final void changeToSafeMode(){
-	}
-	
-	/** 
-	 * Function that puts the Create in Full mode. Must be in Passive or Safe mode to do so.
-	 */
-	public final void changeToFullMode(){
-	}
-	
-	private final CreateMode checkMode(){		
-		return this.currCreateMode;
-	}
-	
 	
 	public float getReqVelocity() {
 		return reqVelocity;
@@ -240,7 +236,7 @@ public class CreateRobot implements Runnable {
 	public static void main(String[] args){
 		
 		System.out.println("Start a new CreateRobot:");
-		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 250, CreateMode.SAFE);
+		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 250, CreateMode.FULL);
 		
 		try {
 			Thread.sleep(5000);
