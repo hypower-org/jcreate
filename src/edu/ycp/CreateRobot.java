@@ -56,10 +56,10 @@ public class CreateRobot implements Runnable {
 	
 	private volatile ChargingState currChargeState;
 	
-	private volatile float reqVelocity;
-	private volatile float reqRadius;
-	private volatile float reqRightVelocity;
-	private volatile float reqLeftVelocity;
+	private volatile float reqVelocity;			// in mm/s
+	private volatile float reqRadius;			// in mm
+	private volatile float reqRightVelocity;	// in mm/s
+	private volatile float reqLeftVelocity;		// in mm/s
 	
 	private volatile float distance;	// distance traveled in mm since last request
 	private volatile float angle;		// angle rotated in degrees since last request
@@ -77,13 +77,14 @@ public class CreateRobot implements Runnable {
 	private volatile short batteryTemp; // in C
 	private volatile float batteryCapacity; // in mAh
 	
-	private volatile char wallSignal;
-	private volatile char cliffLeftSignal;
-	private volatile char cliffLeftFrontSignal;
-	private volatile char cliffRightFrontSignal;
-	private volatile char cliffRightSignal;
+	private volatile int wallSignal;
+	private volatile int cliffLeftSignal;
+	private volatile int cliffLeftFrontSignal;
+	private volatile int cliffRightFrontSignal;
+	private volatile int cliffRightSignal;
 	
-	private volatile byte cargoDIO;
+	private volatile byte cargoDIN;
+	private volatile int cargoAIN;
 	
 	public enum CreateMode {
 		OFF, PASSIVE, SAFE, FULL;
@@ -142,17 +143,14 @@ public class CreateRobot implements Runnable {
 				this.dataParser.parseData(incomingBuf);
 				if(dataParser.isDataBufReady()){
 					// get it and populate the local variables!
-					System.out.print("New sensor data ready!\n[");
+//					System.out.print("New sensor data ready!\n[");
 					byte[] freshData = dataParser.getSensorDataBuffer().array();
-					for(byte b : freshData){
-						System.out.print(b + " ");
-					}
-					System.out.println("]");
+//					for(byte b : freshData){
+//						System.out.print(b + " ");
+//					}
+//					System.out.println("]");
 					
-					long start = System.currentTimeMillis();
 					processData(freshData);
-					long stop = System.currentTimeMillis();
-					System.out.println("time: " + (stop-start));
 					
 				}
 				
@@ -225,8 +223,7 @@ public class CreateRobot implements Runnable {
 		char voltValue = bytesToChar(freshData[17], freshData[18]);
 		this.batteryVoltage = voltValue;
 		
-		int currentInt = ((int) freshData[19]) << 8;
-		currentInt |= ((int) freshData[20]);
+		int currentInt = ( ((int) freshData[19]) << 8 | ((int) freshData[20]) );
 		this.batteryCurrent = (float) currentInt;
 		
 		this.batteryTemp = (short) freshData[21];
@@ -244,7 +241,22 @@ public class CreateRobot implements Runnable {
 		this.cliffRightFrontSignal = bytesToChar(freshData[32], freshData[33]);
 		this.cliffRightSignal = bytesToChar(freshData[34], freshData[35]);
 		
+		this.cargoDIN = freshData[36];
+		this.cargoAIN = bytesToChar(freshData[37], freshData[38]);
 		
+		// skipping all other bytes up to the requested velocity, etc.
+		// TODO: verify the requested velocities - do they need the conversion factor?
+		char velocityValue = bytesToChar(freshData[44], freshData[45]);
+		this.reqVelocity = velocityValue;
+		
+		int radiusValue = ( ((int) freshData[46]) << 8 | (int) freshData[47] );
+		this.reqRadius = (float) radiusValue;
+		
+		char rightVelValue = bytesToChar(freshData[48], freshData[49]);
+		this.reqRightVelocity = rightVelValue;
+		
+		char leftVelValue = bytesToChar(freshData[50], freshData[51]);
+		this.reqLeftVelocity = leftVelValue;
 		
 	}
 
@@ -386,6 +398,34 @@ public class CreateRobot implements Runnable {
 		return batteryCapacity;
 	}
 
+	public int getWallSignal() {
+		return wallSignal;
+	}
+
+	public int getCliffLeftSignal() {
+		return cliffLeftSignal;
+	}
+
+	public int getCliffLeftFrontSignal() {
+		return cliffLeftFrontSignal;
+	}
+
+	public int getCliffRightFrontSignal() {
+		return cliffRightFrontSignal;
+	}
+
+	public int getCliffRightSignal() {
+		return cliffRightSignal;
+	}
+
+	public byte getCargoDIN() {
+		return cargoDIN;
+	}
+
+	public int getCargoAIN() {
+		return cargoAIN;
+	}
+
 	public final void requestStop() {		
 		stopRequested = true;
 		if(mainThread != null){
@@ -438,6 +478,12 @@ public class CreateRobot implements Runnable {
 			System.out.println("Battery temp  "+ robot.getBatteryTemp() + " degrees");
 			System.out.println("Battery charge " + robot.getBatteryCharge() + " mAh");
 			System.out.println("Battery capacity " + robot.getBatteryCapacity() + " mAh");
+			
+//			System.out.println("Signal strengths: ");
+//			System.out.print((int)robot.getWallSignal() + " " + (int)robot.getCliffLeftSignal()
+//					+ " " + (int)robot.getCliffLeftFrontSignal()
+//					+ " " + (int)robot.getCliffRightFrontSignal() 
+//					+ " " + (int)robot.getCliffRightSignal() +"\n");
 			
 			
 			try {
