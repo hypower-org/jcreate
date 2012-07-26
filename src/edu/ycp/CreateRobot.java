@@ -113,10 +113,12 @@ public class CreateRobot implements Runnable {
 				Thread.sleep(MIN_UPDATE_PERIOD);
 				// consume a ByteBuffer from the incoming queue
 				ByteBuffer incomingBuf = this.dataQueue.take();
-				System.out.println(Thread.currentThread().getName() + " consumed incoming data.");
+//				System.out.println(Thread.currentThread().getName() + " consumed incoming data.");
+				
 				// parse the sensor data
-				if(this.dataParser.parseData(incomingBuf) != null){
-					// populate all volatile variables using the new SensorData object
+				this.dataParser.parseData(incomingBuf);
+				if(dataParser.isDataBufReady()){
+					// get it and populate the local variables!
 				}
 				
 			} catch (InterruptedException e) {
