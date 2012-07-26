@@ -73,8 +73,17 @@ public class CreateRobot implements Runnable {
 	
 	private volatile float batteryVoltage;	// mV
 	private volatile float batteryCurrent;	// mA
-	private volatile float batteryCharge;
-	private volatile int batteryTemp; // in C
+	private volatile float batteryCharge;	// in mAh
+	private volatile short batteryTemp; // in C
+	private volatile float batteryCapacity; // in mAh
+	
+	private volatile char wallSignal;
+	private volatile char cliffLeftSignal;
+	private volatile char cliffLeftFrontSignal;
+	private volatile char cliffRightFrontSignal;
+	private volatile char cliffRightSignal;
+	
+	private volatile byte cargoDIO;
 	
 	public enum CreateMode {
 		OFF, PASSIVE, SAFE, FULL;
@@ -140,7 +149,10 @@ public class CreateRobot implements Runnable {
 					}
 					System.out.println("]");
 					
+					long start = System.currentTimeMillis();
 					processData(freshData);
+					long stop = System.currentTimeMillis();
+					System.out.println("time: " + (stop-start));
 					
 				}
 				
@@ -178,11 +190,11 @@ public class CreateRobot implements Runnable {
 		this.playButtonPress = ((freshData[11] & 0x01) != 0);
 		
 		// convert the 2 bytes for distance/angle into a single int, then float
-		int distanceInt = ((int) freshData[12]) << 4; // load high byte
+		int distanceInt = ((int) freshData[12]) << 8; // load high byte
 		distanceInt |= ((int) freshData[13]);
 		this.distance += (float) distanceInt; // accumulates the linear distance traveled		
 		
-		int angleInt = ((int) freshData[14]) << 4; // load high byte
+		int angleInt = ((int) freshData[14]) << 8; // load high byte
 		angleInt |= ((int) freshData[15]);
 		this.angle += (float) angleInt; // accumulates the angle rotated
 
@@ -208,16 +220,31 @@ public class CreateRobot implements Runnable {
 			break;
 		}
 		
-		// need to handle unsigned here! hmm...
-		int voltInt = ((int) freshData[17]) << 8; // load high byte
-		voltInt |= ((int) freshData[18]);
-		this.batteryVoltage = (float) voltInt;
+		// need to handle unsigned int here!		
+		// help from http://darksleep.com/player/JavaAndUnsignedTypes.html
+		char voltValue = bytesToChar(freshData[17], freshData[18]);
+		this.batteryVoltage = voltValue;
 		
 		int currentInt = ((int) freshData[19]) << 8;
 		currentInt |= ((int) freshData[20]);
 		this.batteryCurrent = (float) currentInt;
 		
-		this.batteryTemp = (int) freshData[21];
+		this.batteryTemp = (short) freshData[21];
+		
+		char chargeValue = bytesToChar(freshData[22], freshData[23]);
+		this.batteryCharge = chargeValue;
+		
+		char capValue = bytesToChar(freshData[24], freshData[25]);
+		this.batteryCapacity = capValue;
+		
+		// strength of the wall and cliff sensors
+		this.wallSignal = bytesToChar(freshData[26], freshData[27]);
+		this.cliffLeftSignal = bytesToChar(freshData[28], freshData[29]);
+		this.cliffLeftFrontSignal = bytesToChar(freshData[30], freshData[31]);
+		this.cliffRightFrontSignal = bytesToChar(freshData[32], freshData[33]);
+		this.cliffRightSignal = bytesToChar(freshData[34], freshData[35]);
+		
+		
 		
 	}
 
@@ -351,8 +378,12 @@ public class CreateRobot implements Runnable {
 		return batteryCharge;
 	}
 
-	public int getBatteryTemp() {
+	public short getBatteryTemp() {
 		return batteryTemp;
+	}
+
+	public float getBatteryCapacity() {
+		return batteryCapacity;
 	}
 
 	public final void requestStop() {		
@@ -362,6 +393,17 @@ public class CreateRobot implements Runnable {
 		}
 	}
 
+	/**
+	 * This function effectively creates an unsigned integer. Promotes both input
+	 * bytes to ints and then chops off the top bytes.
+	 * @return
+	 */
+	private final char bytesToChar(byte hb, byte lb){
+		
+		return (char) ((0x000000FF & ((int)hb)) << 8 | (0x000000FF & ((int)lb)));
+		
+	}
+	
 	public static void main(String[] args){
 		
 		byte test1 = 57;
@@ -394,6 +436,8 @@ public class CreateRobot implements Runnable {
 			System.out.println("Battery voltage: " + robot.getBatteryVoltage() + " mV");
 			System.out.println("Battery current "+ robot.getBatteryCurrent() + " mA");
 			System.out.println("Battery temp  "+ robot.getBatteryTemp() + " degrees");
+			System.out.println("Battery charge " + robot.getBatteryCharge() + " mAh");
+			System.out.println("Battery capacity " + robot.getBatteryCapacity() + " mAh");
 			
 			
 			try {
@@ -407,15 +451,6 @@ public class CreateRobot implements Runnable {
 		}
 		robot.requestStop();
 		
-//		try {
-//			Thread.sleep(10000);
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-//		robot.requestStop();
-
 	}
 
 }
