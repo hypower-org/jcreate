@@ -446,10 +446,6 @@ public class CreateRobot implements Runnable {
 	
 	public static void main(String[] args){
 		
-		byte test1 = 57;
-		byte test2 = -42;
-		int testInt = ((int)test1) << 8;
-		
 		System.out.println("Start a new CreateRobot:");
 		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 400, CreateMode.FULL);
 		int execCount = 0;
