@@ -46,6 +46,16 @@ public class CreateRobot implements Runnable {
 	/*
 	 * Private, volatile data members for outside access.
 	 */
+	private volatile boolean wheelDropLeft;
+	private volatile boolean wheelDropRight;
+	private volatile boolean casterDrop;
+	private volatile boolean bumpLeft;
+	private volatile boolean bumpRight;
+	private volatile boolean advanceButtonPress;
+	private volatile boolean playButtonPress;
+	
+	private volatile ChargingState currChargeState;
+	
 	private volatile float reqVelocity;
 	private volatile float reqRadius;
 	private volatile float reqRightVelocity;
@@ -61,12 +71,17 @@ public class CreateRobot implements Runnable {
 	private volatile boolean cliffRight;
 	private volatile boolean virtualWall;
 	
-	private volatile float batteryVoltage;
-	private volatile float batteryCurrent;
+	private volatile float batteryVoltage;	// mV
+	private volatile float batteryCurrent;	// mA
 	private volatile float batteryCharge;
+	private volatile int batteryTemp; // in C
 	
 	public enum CreateMode {
 		OFF, PASSIVE, SAFE, FULL;
+	}
+	
+	public enum ChargingState {
+		NOT, RECOND, FULL, TRICKLE, WAITING, FAULT;
 	}
 	
 	/**
@@ -119,10 +134,14 @@ public class CreateRobot implements Runnable {
 				if(dataParser.isDataBufReady()){
 					// get it and populate the local variables!
 					System.out.print("New sensor data ready!\n[");
-					for(byte b : dataParser.getSensorDataBuffer().array()){
+					byte[] freshData = dataParser.getSensorDataBuffer().array();
+					for(byte b : freshData){
 						System.out.print(b + " ");
 					}
 					System.out.println("]");
+					
+					processData(freshData);
+					
 				}
 				
 			} catch (InterruptedException e) {
@@ -132,6 +151,74 @@ public class CreateRobot implements Runnable {
 				System.out.println("CreateRobot stopped.");
 			}
 		}
+	}
+
+	private final void processData(byte[] freshData) {
+
+		// convert the bits to booleans based on location in the first byte
+		this.bumpRight = ((freshData[0] & 0x01) != 0);
+		this.bumpLeft = (( (freshData[0] >> 1) & 0x01) != 0);
+		this.wheelDropRight = (( (freshData[0] >> 2) & 0x01) != 0);
+		this.wheelDropLeft = (( (freshData[0] >> 3) & 0x01) != 0);
+		this.casterDrop = (( (freshData[0] >> 4) & 0x01) != 0);
+		
+		// other boolean data values - bytes 1->6
+		this.wall = (freshData[1] != 0);
+		this.cliffLeft = (freshData[2] != 0);
+		this.cliffLeftFront = (freshData[3] != 0);
+		this.cliffRightFront = (freshData[4] != 0);
+		this.cliffRight = (freshData[5] != 0);
+		this.virtualWall = (freshData[6] != 0);
+		
+		// skipping low side driver for now...byte index 7
+		// bytes 8and 9 unused		
+		// IR byte not implemented...byte index 10
+		// buttons- byte 11
+		this.advanceButtonPress = ( ((freshData[11] >> 2) & 0x01) != 0 );
+		this.playButtonPress = ((freshData[11] & 0x01) != 0);
+		
+		// convert the 2 bytes for distance/angle into a single int, then float
+		int distanceInt = ((int) freshData[12]) << 4; // load high byte
+		distanceInt |= ((int) freshData[13]);
+		this.distance += (float) distanceInt; // accumulates the linear distance traveled		
+		
+		int angleInt = ((int) freshData[14]) << 4; // load high byte
+		angleInt |= ((int) freshData[15]);
+		this.angle += (float) angleInt; // accumulates the angle rotated
+
+		//set charging state
+		switch(freshData[16]){
+		case 0:
+			this.currChargeState = ChargingState.NOT;
+			break;
+		case 1:
+			this.currChargeState = ChargingState.RECOND;
+			break;
+		case 2:
+			this.currChargeState = ChargingState.FULL;
+			break;
+		case 3:
+			this.currChargeState = ChargingState.TRICKLE;
+			break;
+		case 4:
+			this.currChargeState = ChargingState.WAITING;
+			break;
+		case 5:
+			this.currChargeState = ChargingState.FAULT;
+			break;
+		}
+		
+		// need to handle unsigned here! hmm...
+		int voltInt = ((int) freshData[17]) << 8; // load high byte
+		voltInt |= ((int) freshData[18]);
+		this.batteryVoltage = (float) voltInt;
+		
+		int currentInt = ((int) freshData[19]) << 8;
+		currentInt |= ((int) freshData[20]);
+		this.batteryCurrent = (float) currentInt;
+		
+		this.batteryTemp = (int) freshData[21];
+		
 	}
 
 	public CreateMode getCurrCreateMode() {
@@ -174,6 +261,38 @@ public class CreateRobot implements Runnable {
 	
 	public float getReqVelocity() {
 		return reqVelocity;
+	}
+
+	public ChargingState getCurrChargeState() {
+		return currChargeState;
+	}
+
+	public boolean isAdvanceButtonPress() {
+		return advanceButtonPress;
+	}
+
+	public boolean isPlayButtonPress() {
+		return playButtonPress;
+	}
+
+	public boolean isWheelDropLeft() {
+		return wheelDropLeft;
+	}
+
+	public boolean isWheelDropRight() {
+		return wheelDropRight;
+	}
+
+	public boolean isCasterDrop() {
+		return casterDrop;
+	}
+
+	public boolean isBumpLeft() {
+		return bumpLeft;
+	}
+
+	public boolean isBumpRight() {
+		return bumpRight;
 	}
 
 	public float getReqRadius() {
@@ -232,6 +351,10 @@ public class CreateRobot implements Runnable {
 		return batteryCharge;
 	}
 
+	public int getBatteryTemp() {
+		return batteryTemp;
+	}
+
 	public final void requestStop() {		
 		stopRequested = true;
 		if(mainThread != null){
@@ -241,17 +364,57 @@ public class CreateRobot implements Runnable {
 
 	public static void main(String[] args){
 		
+		byte test1 = 57;
+		byte test2 = -42;
+		int testInt = ((int)test1) << 8;
+		
 		System.out.println("Start a new CreateRobot:");
-		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 200, CreateMode.FULL);
+		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 400, CreateMode.FULL);
+		int execCount = 0;
 		
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		while(execCount < 15){
+			
+			if(robot.isBumpRight()){
+				System.out.println("Bumped right side!");
+			}
+			if(robot.isBumpLeft()){
+				System.out.println("Bumped left side!");
+			}
+			if(robot.wheelDropRight){
+				System.out.println("Wheel dropped right side!");
+			}
+			if(robot.wheelDropLeft){
+				System.out.println("Wheel dropped left side!");
+			}
+			if(robot.casterDrop){
+				System.out.println("Caster dropped!");
+			}
+			
+			System.out.println("Charging state: " + robot.getCurrChargeState());
+			System.out.println("Battery voltage: " + robot.getBatteryVoltage() + " mV");
+			System.out.println("Battery current "+ robot.getBatteryCurrent() + " mA");
+			System.out.println("Battery temp  "+ robot.getBatteryTemp() + " degrees");
+			
+			
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			execCount++;
 		}
-		
 		robot.requestStop();
+		
+//		try {
+//			Thread.sleep(10000);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		
+//		robot.requestStop();
 
 	}
 

@@ -167,7 +167,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	 */
 	private final void writeBuffer(ByteBuffer bb) {
 		try {
-			System.out.println(Thread.currentThread().getName() + " writing buffer");
+//			System.out.println(Thread.currentThread().getName() + " writing buffer");
 			this.serialOutStream.write(bb.array());
 			
 		} catch (IOException e) {
