@@ -136,7 +136,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 			try {
 				
 				int sizeOfInput = serialInStream.available();
-				System.out.println(Thread.currentThread().getName() + ": " + sizeOfInput + " bytes ready on serial input.");
+//				System.out.println(Thread.currentThread().getName() + ": " + sizeOfInput + " bytes ready on serial input.");
 				
 				// read data if it exists
 				if(sizeOfInput > 0){
@@ -215,11 +215,11 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 				// compute sleep time
 				long queueTotalTime = queueBlockEnd - queueBlockStart;
 				if((this.updatePeriod - queueTotalTime) < 0){
-					System.out.println(Thread.currentThread().getName() + " sleeping for " + (this.updatePeriod));
+//					System.out.println(Thread.currentThread().getName() + " sleeping for " + (this.updatePeriod));
 					Thread.sleep(this.MIN_BLOCK_TIME);
 				}
 				else{
-					System.out.println(Thread.currentThread().getName() + " sleeping for " + (this.updatePeriod - queueTotalTime));
+//					System.out.println(Thread.currentThread().getName() + " sleeping for " + (this.updatePeriod - queueTotalTime));
 					Thread.sleep(this.updatePeriod - queueTotalTime);
 				}
 								

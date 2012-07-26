@@ -47,6 +47,7 @@ public class SensorDataParser {
 		if(currState == ParserState.INIT){
 			// set the state to Partial to enable parsing
 			isDataBufReady = false;
+			sensorDataBuffer.clear();
 			currState = ParserState.PARTIAL;
 		}
 		

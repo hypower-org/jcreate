@@ -107,7 +107,6 @@ public class CreateRobot implements Runnable {
 	@Override
 	public void run() {
 		
-		//TODO: determine what needs to run at wakeup.
 		while(!stopRequested){
 			try {
 				Thread.sleep(MIN_UPDATE_PERIOD);
@@ -119,6 +118,11 @@ public class CreateRobot implements Runnable {
 				this.dataParser.parseData(incomingBuf);
 				if(dataParser.isDataBufReady()){
 					// get it and populate the local variables!
+					System.out.print("New sensor data ready!\n[");
+					for(byte b : dataParser.getSensorDataBuffer().array()){
+						System.out.print(b + " ");
+					}
+					System.out.println("]");
 				}
 				
 			} catch (InterruptedException e) {
@@ -238,10 +242,10 @@ public class CreateRobot implements Runnable {
 	public static void main(String[] args){
 		
 		System.out.println("Start a new CreateRobot:");
-		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 250, CreateMode.FULL);
+		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 200, CreateMode.FULL);
 		
 		try {
-			Thread.sleep(5000);
+			Thread.sleep(10000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
