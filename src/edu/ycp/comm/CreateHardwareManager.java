@@ -17,7 +17,9 @@ package edu.ycp.comm;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.Enumeration;
 import java.util.TooManyListenersException;
+import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -75,7 +77,18 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		
 		CommPortIdentifier portId;
 		try {
+			Enumeration portEnum = CommPortIdentifier.getPortIdentifiers();
+			Vector<CommPortIdentifier> commPortList = new Vector<CommPortIdentifier>();
 			
+			while(portEnum.hasMoreElements()){
+	            CommPortIdentifier commPortId = (CommPortIdentifier) portEnum.nextElement();
+	            if(commPortId.getPortType() == CommPortIdentifier.PORT_SERIAL)
+	            {
+	            	System.out.println(commPortId.getName() + " found!");
+	            	commPortList.add(commPortId);
+	            }
+	        }
+	        
 			portId = CommPortIdentifier.getPortIdentifier(serialPortName);
 			serialPort = (SerialPort) portId.open("CreateHardwareManager", baudRate);
 			serialPort.setSerialPortParams(baudRate, SerialPort.DATABITS_8, 
@@ -136,7 +149,6 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 			try {
 				
 				int sizeOfInput = serialInStream.available();
-//				System.out.println(Thread.currentThread().getName() + ": " + sizeOfInput + " bytes ready on serial input.");
 				
 				// read data if it exists
 				if(sizeOfInput > 0){
