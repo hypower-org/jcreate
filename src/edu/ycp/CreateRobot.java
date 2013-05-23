@@ -45,7 +45,6 @@ public class CreateRobot implements Runnable {
 	final SensorDataParser dataParser;
 	
 	private volatile boolean robotStopRequested;	
-//	private final Thread mainThread;
 	
 	private final ExecutorService executor; // executor service for the data and command Q management
 	private final Vector<Future<?>> tasks;
@@ -130,9 +129,6 @@ public class CreateRobot implements Runnable {
 		this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		
 		robotStopRequested = false;		
-//		this.mainThread = new Thread(this);
-//		mainThread.setName(CreateRobot.class.getSimpleName());
-//		mainThread.start();
 		
 		// create the command thread for issuing commands to the robot.
 		Runnable cmdRunner = new Runnable(){
@@ -183,10 +179,6 @@ public class CreateRobot implements Runnable {
 		tasks.add(this.executor.submit(dataRunner));
 		tasks.add(this.executor.submit(this));
 		
-//		this.executor.execute(cmdRunner);
-//		this.executor.execute(dataRunner);
-//		this.executor.execute(this);
-		
 	}
 
 	@Override
@@ -195,24 +187,8 @@ public class CreateRobot implements Runnable {
 		while(!robotStopRequested){
 			try {
 				Thread.sleep(MIN_UPDATE_PERIOD);
-//				// consume a ByteBuffer from the incoming queue
-//				ByteBuffer incomingBuf = this.dataQueue.take();
-//				
-//				// parse the sensor data
-//				this.dataParser.parseData(incomingBuf);
-//				if(dataParser.isDataBufReady()){
-//					// get it and populate the local variables!
-//					int lengthOfData = dataParser.getSensorDataBuffer().array().length;
-//					byte[] freshData = new byte[lengthOfData];			
-//					System.arraycopy(dataParser.getSensorDataBuffer().array(), 0, freshData, 0, lengthOfData);
-//					processData(freshData);
-//					
-//				}
-				
 			} catch (InterruptedException e) {
-//				this.hardwareManager.requestStop();
 				Thread.currentThread().interrupt();
-//				System.out.println("CreateRobot stopped.");
 			}
 		}
 		this.hardwareManager.requestStop();
@@ -226,9 +202,6 @@ public class CreateRobot implements Runnable {
 	public final void requestStop() {		
 		robotStopRequested = true;
 		System.out.println(Thread.currentThread() + " requesting stop...");
-//		if(mainThread != null){
-//			mainThread.interrupt();
-//		}
 	}
 
 	private final void processData(byte[] freshData) {
