@@ -16,7 +16,11 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 package edu.ycp;
 
 import java.nio.ByteBuffer;
+import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import edu.ycp.InputPacket.InputCommand;
@@ -40,8 +44,12 @@ public class CreateRobot implements Runnable {
 	final BlockingQueue<ByteBuffer> commandQueue;
 	final SensorDataParser dataParser;
 	
-	private boolean stopRequested;	
-	private Thread mainThread;
+	private volatile boolean robotStopRequested;	
+//	private final Thread mainThread;
+	
+	private final ExecutorService executor; // executor service for the data and command Q management
+	private final Vector<Future<?>> tasks;
+	
 	
 	/*
 	 * Private, volatile data members for outside access.
@@ -118,43 +126,109 @@ public class CreateRobot implements Runnable {
 		
 		dataParser = new SensorDataParser();
 		
-		startRobot();
+		System.out.println(Runtime.getRuntime().availableProcessors() + " found - making executor!");
+		this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		
+		robotStopRequested = false;		
+//		this.mainThread = new Thread(this);
+//		mainThread.setName(CreateRobot.class.getSimpleName());
+//		mainThread.start();
+		
+		// create the command thread for issuing commands to the robot.
+		Runnable cmdRunner = new Runnable(){
+
+			@Override
+			public void run() {
+				// take from the command Q - it blocks if there is no command
+				while(true){
+					try {
+						ByteBuffer newCmd = commandQueue.take();
+					} catch (InterruptedException e) {
+						System.err.println(Thread.currentThread().getName() + ": Command task stopped.");
+					}
+				}
+				
+			}
+			
+		};
+		Runnable dataRunner = new Runnable(){
+
+			@Override
+			public void run() {
+				// take from the data Q - blocks if there is no command
+				while(true){
+					try{
+						ByteBuffer incomingBuf = dataQueue.take();
+						
+						// parse the sensor data
+						dataParser.parseData(incomingBuf);
+						if(dataParser.isDataBufReady()){
+							// get it and populate the local variables!
+							int lengthOfData = dataParser.getSensorDataBuffer().array().length;
+							byte[] freshData = new byte[lengthOfData];			
+							System.arraycopy(dataParser.getSensorDataBuffer().array(), 0, freshData, 0, lengthOfData);
+							processData(freshData);
+							
+						}
+					} catch(InterruptedException e){
+						System.err.println(Thread.currentThread().getName() + ": Data task stopped.");
+					}
+				}
+			}
+			
+		};
+
+		tasks = new Vector<Future<?>>();
+		tasks.add(this.executor.submit(cmdRunner));
+		tasks.add(this.executor.submit(dataRunner));
+		tasks.add(this.executor.submit(this));
+		
+//		this.executor.execute(cmdRunner);
+//		this.executor.execute(dataRunner);
+//		this.executor.execute(this);
 		
 	}
 
-	private final void startRobot(){
-		stopRequested = false;		
-		this.mainThread = new Thread(this);
-		mainThread.setName(CreateRobot.class.getSimpleName());
-		mainThread.start();
-	}
-	
 	@Override
 	public void run() {
 		
-		while(!stopRequested){
+		while(!robotStopRequested){
 			try {
 				Thread.sleep(MIN_UPDATE_PERIOD);
-				// consume a ByteBuffer from the incoming queue
-				ByteBuffer incomingBuf = this.dataQueue.take();
-				
-				// parse the sensor data
-				this.dataParser.parseData(incomingBuf);
-				if(dataParser.isDataBufReady()){
-					// get it and populate the local variables!
-					int lengthOfData = dataParser.getSensorDataBuffer().array().length;
-					byte[] freshData = new byte[lengthOfData];			
-					System.arraycopy(dataParser.getSensorDataBuffer().array(), 0, freshData, 0, lengthOfData);
-					processData(freshData);
-					
-				}
+//				// consume a ByteBuffer from the incoming queue
+//				ByteBuffer incomingBuf = this.dataQueue.take();
+//				
+//				// parse the sensor data
+//				this.dataParser.parseData(incomingBuf);
+//				if(dataParser.isDataBufReady()){
+//					// get it and populate the local variables!
+//					int lengthOfData = dataParser.getSensorDataBuffer().array().length;
+//					byte[] freshData = new byte[lengthOfData];			
+//					System.arraycopy(dataParser.getSensorDataBuffer().array(), 0, freshData, 0, lengthOfData);
+//					processData(freshData);
+//					
+//				}
 				
 			} catch (InterruptedException e) {
-				this.hardwareManager.requestStop();
+//				this.hardwareManager.requestStop();
 				Thread.currentThread().interrupt();
-				System.out.println("CreateRobot stopped.");
+//				System.out.println("CreateRobot stopped.");
 			}
 		}
+		this.hardwareManager.requestStop();
+		for(Future<?> currTask : tasks){
+			currTask.cancel(true);
+		}
+		this.executor.shutdown();
+		System.out.println(Thread.currentThread().getName() + ": CreateRobot stopped.");
+	}
+
+	public final void requestStop() {		
+		robotStopRequested = true;
+		System.out.println(Thread.currentThread() + " requesting stop...");
+//		if(mainThread != null){
+//			mainThread.interrupt();
+//		}
 	}
 
 	private final void processData(byte[] freshData) {
@@ -420,13 +494,6 @@ public class CreateRobot implements Runnable {
 		return cargoAIN;
 	}
 
-	public final void requestStop() {		
-		stopRequested = true;
-		if(mainThread != null){
-			mainThread.interrupt();
-		}
-	}
-
 	/**
 	 * This function effectively creates an unsigned integer. Promotes both input
 	 * bytes to ints and then chops off the top bytes.
@@ -441,7 +508,7 @@ public class CreateRobot implements Runnable {
 	public static void main(String[] args){
 		
 		System.out.println("Start a new CreateRobot:");
-		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 400, CreateMode.FULL);
+		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 250, CreateMode.FULL);
 		int execCount = 0;
 		
 		while(execCount < 15){
