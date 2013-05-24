@@ -45,8 +45,8 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	private InputStream serialInStream;
 	private OutputStream serialOutStream;
 
-	private final long updatePeriod;		// in ms
-	private final long MIN_BLOCK_TIME = 30;
+	// setting the update rate to always be 30 ms internally
+	private final long UPDATE_PERIOD = 30;
 	
 	private final BlockingQueue<ByteBuffer> returnQueue;
 	private final BlockingQueue<ByteBuffer> commandQueue;
@@ -56,19 +56,9 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	private volatile boolean stopRequested;
 	private Thread mainThread;
 	
-	public CreateHardwareManager(String portName, long updatePeriod, CreateMode desMode, BlockingQueue<ByteBuffer> retQueue,
-			BlockingQueue<ByteBuffer> commandQueue){
+	public CreateHardwareManager(String portName, CreateMode desMode, BlockingQueue<ByteBuffer> retQueue, BlockingQueue<ByteBuffer> commandQueue){
 		
 		this.serialPortName = portName;
-		
-		// check to make sure the update period is not less allowable by Create robot.
-		if(updatePeriod < this.MIN_BLOCK_TIME){
-			this.updatePeriod = this.MIN_BLOCK_TIME;
-			System.err.println("WARNING: desired update period too small. Currently set to minimum: " + this.MIN_BLOCK_TIME + "ms");
-		}
-		else{
-			this.updatePeriod = updatePeriod;
-		}
 		
 		this.returnQueue = retQueue;
 		this.commandQueue = commandQueue;
@@ -223,7 +213,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 				// grab the most recent command to the Create from the commandQueue
 				long queueBlockStart = System.currentTimeMillis();
 //				System.out.println(commandQueue.size());
-				ByteBuffer cmdBB = commandQueue.poll(MIN_BLOCK_TIME, TimeUnit.MILLISECONDS);
+				ByteBuffer cmdBB = commandQueue.poll(UPDATE_PERIOD, TimeUnit.MILLISECONDS);
 				long queueBlockEnd = System.currentTimeMillis();
 				if(cmdBB != null){
 					System.out.print(Thread.currentThread().getName() + ": Command received! \n[");
@@ -237,11 +227,11 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 				// compute sleep time
 				long queueTotalTime = queueBlockEnd - queueBlockStart;
 				System.out.println("Queue blocking time = " + queueTotalTime);
-				if((this.updatePeriod - queueTotalTime) < 0){
-					Thread.sleep(this.MIN_BLOCK_TIME);
+				if((this.UPDATE_PERIOD - queueTotalTime) < 0){
+					Thread.sleep(this.UPDATE_PERIOD);
 				}
 				else{
-					Thread.sleep(this.updatePeriod - queueTotalTime);
+					Thread.sleep(this.UPDATE_PERIOD - queueTotalTime);
 				}
 								
 			} catch (InterruptedException e) {
@@ -272,7 +262,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		final BlockingQueue<ByteBuffer> returnQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 		final BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
 
-		CreateHardwareManager chm = new CreateHardwareManager("/dev/ttyUSB0", 500, CreateMode.FULL, returnQueue, commandQueue);
+		CreateHardwareManager chm = new CreateHardwareManager("/dev/ttyUSB0", CreateMode.FULL, returnQueue, commandQueue);
 		
 		while(!chm.isInitialized());
 		

@@ -110,14 +110,12 @@ public class CreateRobot implements Runnable {
 	 * @param updatePeriod
 	 * @param initMode
 	 */
-	public CreateRobot(String serialPortName, int updatePeriod, CreateMode initMode){
+	public CreateRobot(String serialPortName, CreateMode initMode){
 
-		//TODO: consider making a factory!
-		
 		dataQueue = new LinkedBlockingQueue<ByteBuffer>();
 		commandQueue = new LinkedBlockingQueue<ByteBuffer>();
 		
-		hardwareManager = new CreateHardwareManager(serialPortName, updatePeriod, initMode, dataQueue, commandQueue);
+		hardwareManager = new CreateHardwareManager(serialPortName, initMode, dataQueue, commandQueue);
 		while(!hardwareManager.isInitialized());
 		
 		// TODO: implement mode initialization
@@ -125,7 +123,6 @@ public class CreateRobot implements Runnable {
 		
 		dataParser = new SensorDataParser();
 		
-//		System.out.println(Runtime.getRuntime().availableProcessors() + " found - making executor!");
 		this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		
 		robotStopRequested = false;		
@@ -512,7 +509,7 @@ public class CreateRobot implements Runnable {
 	public static void main(String[] args){
 		
 		System.out.println("Start a new CreateRobot:");
-		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 250, CreateMode.FULL);
+		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", CreateMode.FULL);
 		int execCount = 0;
 		
 		while(execCount < 5){
