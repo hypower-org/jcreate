@@ -543,7 +543,7 @@ public class CreateRobot implements Runnable {
 //					+ " " + (int)robot.getCliffRightFrontSignal() 
 //					+ " " + (int)robot.getCliffRightSignal() +"\n");
 			
-			//robot.drive(200, 0);
+			robot.drive(200, 0);
 			
 			try {
 				Thread.sleep(500);

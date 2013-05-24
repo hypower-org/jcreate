@@ -24,6 +24,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import edu.ycp.ActuatorCommand;
 import edu.ycp.CreateRobot.CreateMode;
 import edu.ycp.InputPacket.InputCommand;
 import edu.ycp.ModePacket;
@@ -189,6 +190,15 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	}
 	
 	public final void requestStop(){
+		// send a motor stop before killing the threads
+		ByteBuffer stopBuf = ByteBuffer.allocate(5);
+		stopBuf.put(ActuatorCommand.DRIVE.getOpcodeVal());
+		stopBuf.put((byte)0);
+		stopBuf.put((byte)0);
+		stopBuf.put((byte)0);
+		stopBuf.put((byte)0);
+		writeBuffer(stopBuf);
+
 		stopRequested = true;
 		if(mainThread != null){
 			mainThread.interrupt();
@@ -226,7 +236,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 								
 				// compute sleep time
 				long queueTotalTime = queueBlockEnd - queueBlockStart;
-				System.out.println("Queue blocking time = " + queueTotalTime);
+//				System.out.println("Queue blocking time = " + queueTotalTime);
 				if((this.UPDATE_PERIOD - queueTotalTime) < 0){
 					Thread.sleep(this.UPDATE_PERIOD);
 				}
@@ -257,23 +267,4 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		}
 	}
 	
-	public static void main(String[] args){
-
-		final BlockingQueue<ByteBuffer> returnQueue = new LinkedBlockingQueue<ByteBuffer>(10);
-		final BlockingQueue<ByteBuffer> commandQueue = new LinkedBlockingQueue<ByteBuffer>(10);
-
-		CreateHardwareManager chm = new CreateHardwareManager("/dev/ttyUSB0", CreateMode.FULL, returnQueue, commandQueue);
-		
-		while(!chm.isInitialized());
-		
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-//		while(true);
-		
-	}
 }
