@@ -308,6 +308,16 @@ public class CreateRobot implements Runnable {
 	}
 
 	/**
+	 * This method abstracts the control of the robot to use linear and rotational
+	 * speeds.
+	 * @param linearSpeed
+	 * @param rotSpeed
+	 */
+	public final void go(float linearSpeed, float rotSpeed){
+		// TODO: implement
+	}
+	
+	/**
 	 * This method queues a drive command for the Create robot.
 	 * @param velocity - in mm/s
 	 * @param radius - in mm
@@ -514,21 +524,21 @@ public class CreateRobot implements Runnable {
 		
 		while(execCount < 5){
 			
-//			if(robot.isBumpRight()){
-//				System.out.println("Bumped right side!");
-//			}
-//			if(robot.isBumpLeft()){
-//				System.out.println("Bumped left side!");
-//			}
-//			if(robot.wheelDropRight){
-//				System.out.println("Wheel dropped right side!");
-//			}
-//			if(robot.wheelDropLeft){
-//				System.out.println("Wheel dropped left side!");
-//			}
-//			if(robot.casterDrop){
-//				System.out.println("Caster dropped!");
-//			}
+			if(robot.isBumpRight()){
+				System.out.println("Bumped right side!");
+			}
+			if(robot.isBumpLeft()){
+				System.out.println("Bumped left side!");
+			}
+			if(robot.wheelDropRight){
+				System.out.println("Wheel dropped right side!");
+			}
+			if(robot.wheelDropLeft){
+				System.out.println("Wheel dropped left side!");
+			}
+			if(robot.casterDrop){
+				System.out.println("Caster dropped!");
+			}
 			
 			System.out.println("Charging state: " + robot.getCurrChargeState());
 			System.out.println("Battery voltage: " + robot.getBatteryVoltage() + " mV");
@@ -537,13 +547,16 @@ public class CreateRobot implements Runnable {
 			System.out.println("Battery charge " + robot.getBatteryCharge() + " mAh");
 			System.out.println("Battery capacity " + robot.getBatteryCapacity() + " mAh");
 			
+			System.out.println("Current requested velocity " + robot.getReqVelocity());
+			System.out.println("Current requested radius " + robot.getReqRadius());
+			
 //			System.out.println("Signal strengths: ");
 //			System.out.print((int)robot.getWallSignal() + " " + (int)robot.getCliffLeftSignal()
 //					+ " " + (int)robot.getCliffLeftFrontSignal()
 //					+ " " + (int)robot.getCliffRightFrontSignal() 
 //					+ " " + (int)robot.getCliffRightSignal() +"\n");
 			
-			robot.drive(200, 0);
+			robot.drive(200, 100);
 			
 			try {
 				Thread.sleep(500);
