@@ -27,9 +27,7 @@ import java.util.concurrent.TimeUnit;
 import edu.ycp.CreateRobot.CreateMode;
 import edu.ycp.InputPacket.InputCommand;
 import edu.ycp.ModePacket;
-import edu.ycp.StartPacket;
 import edu.ycp.ModePacket.ModeCommand;
-import edu.ycp.StartPacket.StartCommand;
 
 import gnu.io.*;
 
@@ -106,7 +104,9 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 			serialInStream = serialPort.getInputStream();
 			
 			// put robot into desired mode by creating mode packet
-			writeBuffer(StartPacket.generateCommand(StartCommand.START));
+			ByteBuffer startBuf = ByteBuffer.allocate(1);
+			startBuf.put(edu.ycp.StartCommand.START.getOpcodeVal());
+			writeBuffer(startBuf);
 			try {
 				Thread.sleep(30);
 			} catch (InterruptedException e) {

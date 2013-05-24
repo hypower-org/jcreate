@@ -23,9 +23,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import edu.ycp.InputPacket.InputCommand;
-import edu.ycp.ModePacket.ModeCommand;
-import edu.ycp.StartPacket.StartCommand;
 import edu.ycp.comm.CreateHardwareManager;
 
 /**
@@ -518,7 +515,7 @@ public class CreateRobot implements Runnable {
 		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 250, CreateMode.FULL);
 		int execCount = 0;
 		
-//		while(execCount < 5){
+		while(execCount < 5){
 			
 //			if(robot.isBumpRight()){
 //				System.out.println("Bumped right side!");
@@ -559,7 +556,7 @@ public class CreateRobot implements Runnable {
 			}
 			
 			execCount++;
-//		}
+		}
 		robot.requestStop();
 		
 	}
