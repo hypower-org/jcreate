@@ -78,18 +78,22 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		CommPortIdentifier portId;
 		try {
 			Enumeration portEnum = CommPortIdentifier.getPortIdentifiers();
-			Vector<CommPortIdentifier> commPortList = new Vector<CommPortIdentifier>();
+			Vector<String> commPortList = new Vector<String>();
 			
 			while(portEnum.hasMoreElements()){
 	            CommPortIdentifier commPortId = (CommPortIdentifier) portEnum.nextElement();
 	            if(commPortId.getPortType() == CommPortIdentifier.PORT_SERIAL)
 	            {
-	            	System.out.println(commPortId.getName() + " found!");
-	            	commPortList.add(commPortId);
+	            	commPortList.add(commPortId.getName());
 	            }
 	        }
 	        
+			if(commPortList.contains(serialPortName)){
+				System.out.println("Connecting to: " + serialPortName);
+			}
+			
 			portId = CommPortIdentifier.getPortIdentifier(serialPortName);
+			
 			serialPort = (SerialPort) portId.open("CreateHardwareManager", baudRate);
 			serialPort.setSerialPortParams(baudRate, SerialPort.DATABITS_8, 
 					SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
@@ -218,20 +222,25 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 
 				// grab the most recent command to the Create from the commandQueue
 				long queueBlockStart = System.currentTimeMillis();
-				ByteBuffer cmdBB = this.commandQueue.poll(MIN_BLOCK_TIME, TimeUnit.MILLISECONDS);
+//				System.out.println(commandQueue.size());
+				ByteBuffer cmdBB = commandQueue.poll(MIN_BLOCK_TIME, TimeUnit.MILLISECONDS);
 				long queueBlockEnd = System.currentTimeMillis();
 				if(cmdBB != null){
+					System.out.print(Thread.currentThread().getName() + ": Command received! \n[");
+					for(byte b : cmdBB.array()){
+						System.out.print(b + " ");
+					}
+					System.out.println("]");
 					writeBuffer(cmdBB);
 				}
 								
 				// compute sleep time
 				long queueTotalTime = queueBlockEnd - queueBlockStart;
+				System.out.println("Queue blocking time = " + queueTotalTime);
 				if((this.updatePeriod - queueTotalTime) < 0){
-//					System.out.println(Thread.currentThread().getName() + " sleeping for " + (this.updatePeriod));
 					Thread.sleep(this.MIN_BLOCK_TIME);
 				}
 				else{
-//					System.out.println(Thread.currentThread().getName() + " sleeping for " + (this.updatePeriod - queueTotalTime));
 					Thread.sleep(this.updatePeriod - queueTotalTime);
 				}
 								

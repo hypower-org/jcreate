@@ -38,6 +38,9 @@ public class CreateRobot implements Runnable {
 	
 	private CreateMode currCreateMode;
 	private final int MIN_UPDATE_PERIOD = 30;	//note, OI docs say 15 ms - I use 30 ms just in case
+	
+	private final int MAX_CREATE_VEL = 500; // mm/s
+	private final int MAX_CREATE_RAD = 2000; // mm
 		
 	private final CreateHardwareManager hardwareManager;
 	final BlockingQueue<ByteBuffer> dataQueue;
@@ -117,7 +120,7 @@ public class CreateRobot implements Runnable {
 		dataQueue = new LinkedBlockingQueue<ByteBuffer>();
 		commandQueue = new LinkedBlockingQueue<ByteBuffer>();
 		
-		hardwareManager = new CreateHardwareManager(serialPortName, updatePeriod, CreateMode.SAFE, dataQueue, commandQueue);
+		hardwareManager = new CreateHardwareManager(serialPortName, updatePeriod, initMode, dataQueue, commandQueue);
 		while(!hardwareManager.isInitialized());
 		
 		// TODO: implement mode initialization
@@ -125,7 +128,7 @@ public class CreateRobot implements Runnable {
 		
 		dataParser = new SensorDataParser();
 		
-		System.out.println(Runtime.getRuntime().availableProcessors() + " found - making executor!");
+//		System.out.println(Runtime.getRuntime().availableProcessors() + " found - making executor!");
 		this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		
 		robotStopRequested = false;		
@@ -135,16 +138,20 @@ public class CreateRobot implements Runnable {
 
 			@Override
 			public void run() {
-				// take from the command Q - it blocks if there is no command
+				// take from the command Q - it blocks if the queue is full
 				while(true){
-					try {
-						ByteBuffer newCmd = commandQueue.take();
-					} catch (InterruptedException e) {
-						System.err.println(Thread.currentThread().getName() + ": Command task stopped.");
-					}
+					
+				//TODO: need to develop this!
+					
+//					try {
+//						
+//					} catch (InterruptedException e) {
+//						System.err.println(Thread.currentThread().getName() + ": Command task stopped.");
+//					}
 				}
 				
 			}
+
 			
 		};
 		Runnable dataRunner = new Runnable(){
@@ -306,10 +313,37 @@ public class CreateRobot implements Runnable {
 		return currCreateMode;
 	}
 
-	/*
-	 * methods for robot actuation
+	/**
+	 * This method queues a drive command for the Create robot.
+	 * @param velocity - in mm/s
+	 * @param radius - in mm
 	 */
-	public final void drive(){
+	public final void drive(float velocity, float radius){
+				
+		int vel = Math.round(velocity);
+		if(vel > this.MAX_CREATE_VEL){
+			vel = this.MAX_CREATE_VEL;
+		}
+		if(vel < -this.MAX_CREATE_VEL){
+			vel = -this.MAX_CREATE_VEL;
+		}
+		
+		int rad = Math.round(radius);
+		if(rad > this.MAX_CREATE_RAD){
+			rad = this.MAX_CREATE_RAD;
+		}
+		if(rad < -this.MAX_CREATE_RAD){
+			rad = -this.MAX_CREATE_RAD;
+		}
+		
+		ByteBuffer outBuf = ByteBuffer.allocate(5);
+		outBuf.put(ActuatorCommand.DRIVE.getOpcodeVal());
+		outBuf.put((byte) ((vel & 0xFFFF) >> 8 ));
+		outBuf.put((byte) (vel & 0xFF));
+		outBuf.put((byte) ((rad & 0xFFFF) >> 8 ));
+		outBuf.put((byte) (rad & 0xFF));
+		
+		this.hardwareManager.sendCommand(outBuf);
 		
 	}
 	
@@ -484,23 +518,23 @@ public class CreateRobot implements Runnable {
 		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", 250, CreateMode.FULL);
 		int execCount = 0;
 		
-		while(execCount < 15){
+//		while(execCount < 5){
 			
-			if(robot.isBumpRight()){
-				System.out.println("Bumped right side!");
-			}
-			if(robot.isBumpLeft()){
-				System.out.println("Bumped left side!");
-			}
-			if(robot.wheelDropRight){
-				System.out.println("Wheel dropped right side!");
-			}
-			if(robot.wheelDropLeft){
-				System.out.println("Wheel dropped left side!");
-			}
-			if(robot.casterDrop){
-				System.out.println("Caster dropped!");
-			}
+//			if(robot.isBumpRight()){
+//				System.out.println("Bumped right side!");
+//			}
+//			if(robot.isBumpLeft()){
+//				System.out.println("Bumped left side!");
+//			}
+//			if(robot.wheelDropRight){
+//				System.out.println("Wheel dropped right side!");
+//			}
+//			if(robot.wheelDropLeft){
+//				System.out.println("Wheel dropped left side!");
+//			}
+//			if(robot.casterDrop){
+//				System.out.println("Caster dropped!");
+//			}
 			
 			System.out.println("Charging state: " + robot.getCurrChargeState());
 			System.out.println("Battery voltage: " + robot.getBatteryVoltage() + " mV");
@@ -515,6 +549,7 @@ public class CreateRobot implements Runnable {
 //					+ " " + (int)robot.getCliffRightFrontSignal() 
 //					+ " " + (int)robot.getCliffRightSignal() +"\n");
 			
+			//robot.drive(200, 0);
 			
 			try {
 				Thread.sleep(500);
@@ -524,7 +559,7 @@ public class CreateRobot implements Runnable {
 			}
 			
 			execCount++;
-		}
+//		}
 		robot.requestStop();
 		
 	}
