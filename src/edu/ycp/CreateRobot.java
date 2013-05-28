@@ -398,7 +398,22 @@ public class CreateRobot implements Runnable {
 		this.hardwareManager.sendCommand(outBuf);
 	}
 	
-	public final void toggleLEDs(){
+	/**
+	 * This method requires three byte parameters that follow the iRobot Create Open Interface
+	 * specification.
+	 * @param leds
+	 * @param color - 0 to 255 represents green to red
+	 * @param intensity - 0 to 255 represents off to full intensity
+	 */
+	public final void toggleLEDs(byte leds, byte color, byte intensity){
+		
+		ByteBuffer outBuf = ByteBuffer.allocate(4);
+		outBuf.put(ActuatorCommand.LEDS.getOpcodeVal());
+		outBuf.put(leds);
+		outBuf.put(color);
+		outBuf.put(intensity);
+		
+		this.hardwareManager.sendCommand(outBuf);
 		
 	}
 	
@@ -565,6 +580,11 @@ public class CreateRobot implements Runnable {
 		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", CreateMode.FULL);
 		int execCount = 0;
 		
+		byte leds = 0xA;
+		byte color = 0x10;
+		byte intensity = 0x7F;
+
+		
 		while(execCount < 10){
 			
 			if(robot.isBumpRight()){
@@ -604,7 +624,11 @@ public class CreateRobot implements Runnable {
 			
 //			robot.drive(200,0);
 			
-			robot.driveDirect(-250, -100);
+			robot.driveDirect(100, 100);
+			
+			robot.toggleLEDs(leds, color, intensity);
+			color *= 2;
+			intensity += 0x10;
 			
 			try {
 				Thread.sleep(500);
