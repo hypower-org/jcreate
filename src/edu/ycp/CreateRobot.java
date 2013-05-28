@@ -29,6 +29,9 @@ public class CreateRobot implements Runnable {
 	
 	private final int MAX_CREATE_VEL = 500; // mm/s
 	private final int MAX_CREATE_RAD = 2000; // mm
+	
+	private final float WHEELBASE = 266.7f; // in mm; 10.5 inches measured
+	private final float WHEEL_RADIUS = 38.1f; // in mm; 1.5 inches measured
 		
 	private final CreateHardwareManager hardwareManager;
 	final BlockingQueue<ByteBuffer> dataQueue;
@@ -300,12 +303,22 @@ public class CreateRobot implements Runnable {
 
 	/**
 	 * This method abstracts the control of the robot to use linear and rotational
-	 * speeds. It uses the driveDirect() method to send the final command to the Create.
-	 * @param linearSpeed
-	 * @param rotSpeed
+	 * speeds based on a unicycle model of a robot. It uses the driveDirect() method 
+	 * to send the final command to the Create. Note: you must send commands according
+	 * to the units listed below.
+	 * @param v - linear speed in mm/s
+	 * @param omega - rotational speed in rad/s
 	 */
-	public final void go(float linearSpeed, float rotSpeed){
-		// TODO: implement
+	public final void go(float v, float omega){
+		
+		float rightSpeed = (2*v + omega*this.WHEELBASE)/2;
+
+		float leftSpeed = (2*v - omega*this.WHEELBASE)/2;
+		
+		System.err.println("Right speed: " + rightSpeed + ", Left speed: " + leftSpeed);
+		
+		this.driveDirect(rightSpeed, leftSpeed);
+
 	}
 	
 	/**
@@ -585,7 +598,7 @@ public class CreateRobot implements Runnable {
 		byte intensity = 0x7F;
 
 		
-		while(execCount < 10){
+		while(execCount < 2){
 			
 			if(robot.isBumpRight()){
 				System.out.println("Bumped right side!");
@@ -624,11 +637,13 @@ public class CreateRobot implements Runnable {
 			
 //			robot.drive(200,0);
 			
-			robot.driveDirect(100, 100);
+//			robot.driveDirect(100, 100);
 			
-			robot.toggleLEDs(leds, color, intensity);
-			color *= 2;
-			intensity += 0x10;
+//			robot.toggleLEDs(leds, color, intensity);
+//			color *= 2;
+//			intensity += 0x10;
+			
+			robot.go(0, (float)(Math.PI)/4);
 			
 			try {
 				Thread.sleep(500);
