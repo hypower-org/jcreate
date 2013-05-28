@@ -1,3 +1,9 @@
+/*
+ Copyright (c) 2013 - York College of Pennsylvania, Patrick J. Martin
+ The MIT License
+ See license.txt for details. 
+*/
+
 package edu.ycp;
 
 public enum ActuatorCommand {
