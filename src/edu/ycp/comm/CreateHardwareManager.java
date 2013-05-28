@@ -213,7 +213,6 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 
 				// grab the most recent command to the Create from the commandQueue
 				long queueBlockStart = System.currentTimeMillis();
-//				System.out.println(commandQueue.size());
 				ByteBuffer cmdBB = commandQueue.poll(UPDATE_PERIOD, TimeUnit.MILLISECONDS);
 				long queueBlockEnd = System.currentTimeMillis();
 				if(cmdBB != null){
@@ -250,7 +249,6 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 				this.commandQueue.put(inCommand);
 			} catch (InterruptedException e) {
 				System.err.println(Thread.currentThread().getName() + " interrupted during sendCommand()");
-				System.err.println(e.getMessage());
 			}
 		}
 		else{

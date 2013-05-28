@@ -278,7 +278,7 @@ public class CreateRobot implements Runnable {
 		this.cargoAIN = bytesToChar(freshData[37], freshData[38]);
 		
 		// skipping all other bytes up to the requested velocity, etc.
-		// TODO: verify the requested velocities - do they need the conversion factor?
+		// TODO: Bug! Negative velocities and radius requests are not stored correctly!
 		char velocityValue = bytesToChar(freshData[44], freshData[45]);
 		this.reqVelocity = velocityValue;
 		
@@ -300,7 +300,7 @@ public class CreateRobot implements Runnable {
 
 	/**
 	 * This method abstracts the control of the robot to use linear and rotational
-	 * speeds.
+	 * speeds. It uses the driveDirect() method to send the final command to the Create.
 	 * @param linearSpeed
 	 * @param rotSpeed
 	 */
@@ -342,8 +342,60 @@ public class CreateRobot implements Runnable {
 		
 	}
 	
-	public final void driveDirect(){
+	/**
+	 * This method implements a clockwise spin. **Does not appear to work! Not sure why.
+	 */
+//	public final void spinClockwise(){
+//		ByteBuffer outBuf = ByteBuffer.allocate(3);
+//		outBuf.put(ActuatorCommand.DRIVE.getOpcodeVal());
+//		outBuf.put((byte) 0xFF);
+//		outBuf.put((byte) 0xFF);
+//		this.hardwareManager.sendCommand(outBuf);
+//	}
+	
+	/**
+	 * This method implements a clockwise spin. **Does not appear to work! Note sure why.
+	 */
+//	public final void spinCounterClockwise(){
+//		ByteBuffer outBuf = ByteBuffer.allocate(3);
+//		outBuf.put(ActuatorCommand.DRIVE.getOpcodeVal());
+//		outBuf.put((byte) 0x00);
+//		outBuf.put((byte) 0x01);
+//		this.hardwareManager.sendCommand(outBuf);
+//	}
+	
+	/**
+	 * This method allows direct speed control oofver the left and right wheels.
+	 * @param rightMotorSpeed
+	 * @param leftMotorSpeed
+	 */
+	public final void driveDirect(float rightMotorSpeed, float leftMotorSpeed){
 		
+		int rightSpeed = Math.round(rightMotorSpeed);
+		int leftSpeed = Math.round(leftMotorSpeed);
+		
+		if(rightSpeed > this.MAX_CREATE_VEL){
+			rightSpeed = this.MAX_CREATE_VEL;
+		}
+		if(rightSpeed < -this.MAX_CREATE_VEL){
+			rightSpeed = -this.MAX_CREATE_VEL;
+		}
+		
+		if(leftSpeed > this.MAX_CREATE_VEL){
+			leftSpeed = this.MAX_CREATE_VEL;
+		}
+		if(leftSpeed < -this.MAX_CREATE_VEL){
+			leftSpeed = -this.MAX_CREATE_VEL;
+		}
+		
+		ByteBuffer outBuf = ByteBuffer.allocate(5);
+		outBuf.put(ActuatorCommand.DRIVE_DIRECT.getOpcodeVal());
+		outBuf.put((byte) ((rightSpeed & 0xFFFF) >> 8 ));
+		outBuf.put((byte) (rightSpeed & 0xFF));
+		outBuf.put((byte) ((leftSpeed & 0xFFFF) >> 8 ));
+		outBuf.put((byte) (leftSpeed & 0xFF));
+
+		this.hardwareManager.sendCommand(outBuf);
 	}
 	
 	public final void toggleLEDs(){
@@ -513,7 +565,7 @@ public class CreateRobot implements Runnable {
 		CreateRobot robot = new CreateRobot("/dev/ttyUSB0", CreateMode.FULL);
 		int execCount = 0;
 		
-		while(execCount < 5){
+		while(execCount < 10){
 			
 			if(robot.isBumpRight()){
 				System.out.println("Bumped right side!");
@@ -538,16 +590,21 @@ public class CreateRobot implements Runnable {
 			System.out.println("Battery charge " + robot.getBatteryCharge() + " mAh");
 			System.out.println("Battery capacity " + robot.getBatteryCapacity() + " mAh");
 			
-			System.out.println("Current requested velocity " + robot.getReqVelocity());
-			System.out.println("Current requested radius " + robot.getReqRadius());
-			
+//			System.out.println("Current requested velocity " + robot.getReqVelocity());
+//			System.out.println("Current requested radius " + robot.getReqRadius());
+
+			System.out.println("Current requested left wheel velocity " + robot.getReqLeftVelocity());
+			System.out.println("Current requested right wheel velocity " + robot.getReqRightVelocity());
+
 //			System.out.println("Signal strengths: ");
 //			System.out.print((int)robot.getWallSignal() + " " + (int)robot.getCliffLeftSignal()
 //					+ " " + (int)robot.getCliffLeftFrontSignal()
 //					+ " " + (int)robot.getCliffRightFrontSignal() 
 //					+ " " + (int)robot.getCliffRightSignal() +"\n");
 			
-			robot.drive(200, 100);
+//			robot.drive(200,0);
+			
+			robot.driveDirect(-250, -100);
 			
 			try {
 				Thread.sleep(500);
