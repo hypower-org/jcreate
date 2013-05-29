@@ -12,7 +12,6 @@ import java.util.Enumeration;
 import java.util.TooManyListenersException;
 import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import edu.ycp.ActuatorCommand;
@@ -101,7 +100,10 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 				writeBuffer(ModePacket.generateCommand(ModeCommand.SAFE));
 			}
 			
-			startManager();
+			stopRequested = false;	
+			mainThread = new Thread(this);
+			mainThread.setName(CreateHardwareManager.class.getSimpleName());
+			mainThread.start();
 
 			initialized = true;
 					
@@ -118,13 +120,6 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		}
 	}
 
-	private final void startManager(){
-		stopRequested = false;	
-		mainThread = new Thread(this);
-		mainThread.setName(CreateHardwareManager.class.getSimpleName());
-		mainThread.start();
-	}
-	
 	@Override
 	public final void serialEvent(SerialPortEvent arg0) {
 		
