@@ -22,7 +22,7 @@ import edu.ycp.comm.CreateHardwareManager;
  * @author profmartin
  *
  */
-public class CreateRobot implements Runnable {
+public class CreateRobot {
 	
 	private CreateMode currCreateMode;
 	private final int MIN_UPDATE_PERIOD = 30;	//note, OI docs say 15 ms - I use 30 ms just in case
@@ -169,29 +169,34 @@ public class CreateRobot implements Runnable {
 			
 		};
 
+		Runnable createRunner = new Runnable(){
+
+			@Override
+			public void run() {
+				
+				while(!robotStopRequested){
+					try {
+						Thread.sleep(MIN_UPDATE_PERIOD);
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+				}
+				hardwareManager.requestStop();
+				for(Future<?> currTask : tasks){
+					currTask.cancel(true);
+				}
+				executor.shutdown();
+				System.out.println(Thread.currentThread().getName() + ": CreateRobot stopped.");
+				
+			}
+			
+		};
+		
 		tasks = new Vector<Future<?>>();
 		tasks.add(this.executor.submit(cmdRunner));
 		tasks.add(this.executor.submit(dataRunner));
-		tasks.add(this.executor.submit(this));
+		tasks.add(this.executor.submit(createRunner));
 		
-	}
-
-	@Override
-	public void run() {
-		
-		while(!robotStopRequested){
-			try {
-				Thread.sleep(MIN_UPDATE_PERIOD);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
-		}
-		this.hardwareManager.requestStop();
-		for(Future<?> currTask : tasks){
-			currTask.cancel(true);
-		}
-		this.executor.shutdown();
-		System.out.println(Thread.currentThread().getName() + ": CreateRobot stopped.");
 	}
 
 	public final void requestStop() {		
@@ -598,7 +603,7 @@ public class CreateRobot implements Runnable {
 		byte intensity = 0x7F;
 
 		
-		while(execCount < 2){
+		while(execCount < 8){
 			
 			if(robot.isBumpRight()){
 				System.out.println("Bumped right side!");
@@ -623,8 +628,8 @@ public class CreateRobot implements Runnable {
 			System.out.println("Battery charge " + robot.getBatteryCharge() + " mAh");
 			System.out.println("Battery capacity " + robot.getBatteryCapacity() + " mAh");
 			
-//			System.out.println("Current requested velocity " + robot.getReqVelocity());
-//			System.out.println("Current requested radius " + robot.getReqRadius());
+			System.out.println("Current requested velocity " + robot.getReqVelocity());
+			System.out.println("Current requested radius " + robot.getReqRadius());
 
 			System.out.println("Current requested left wheel velocity " + robot.getReqLeftVelocity());
 			System.out.println("Current requested right wheel velocity " + robot.getReqRightVelocity());
@@ -635,7 +640,7 @@ public class CreateRobot implements Runnable {
 //					+ " " + (int)robot.getCliffRightFrontSignal() 
 //					+ " " + (int)robot.getCliffRightSignal() +"\n");
 			
-//			robot.drive(200,0);
+//			robot.drive(400, 200);
 			
 //			robot.driveDirect(100, 100);
 			
@@ -643,7 +648,7 @@ public class CreateRobot implements Runnable {
 //			color *= 2;
 //			intensity += 0x10;
 			
-			robot.go(0, (float)(Math.PI)/4);
+			robot.go(0, -(float)(Math.PI)/4);
 			
 			try {
 				Thread.sleep(500);
