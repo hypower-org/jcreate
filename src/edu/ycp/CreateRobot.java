@@ -286,18 +286,10 @@ public class CreateRobot {
 		this.cargoAIN = bytesToChar(freshData[37], freshData[38]);
 		
 		// skipping all other bytes up to the requested velocity, etc.
-		// TODO: Bug! Negative velocities and radius requests are not stored correctly!
-		char velocityValue = bytesToChar(freshData[44], freshData[45]);
-		this.reqVelocity = velocityValue;
-		
-		int radiusValue = ( ((int) freshData[46]) << 8 | (int) freshData[47] );
-		this.reqRadius = (float) radiusValue;
-		
-		char rightVelValue = bytesToChar(freshData[48], freshData[49]);
-		this.reqRightVelocity = rightVelValue;
-		
-		char leftVelValue = bytesToChar(freshData[50], freshData[51]);
-		this.reqLeftVelocity = leftVelValue;
+		this.reqVelocity = bytesToInt(freshData[44], freshData[45]);		
+		this.reqRadius = (float) ( ((int) freshData[46]) << 8 | (int) freshData[47] );
+		this.reqRightVelocity = bytesToInt(freshData[48], freshData[49]);
+		this.reqLeftVelocity = bytesToInt(freshData[50], freshData[51]);
 		
 	}
 
@@ -320,7 +312,7 @@ public class CreateRobot {
 
 		float leftSpeed = (2*v - omega*this.WHEELBASE)/2;
 		
-		System.err.println("Right speed: " + rightSpeed + ", Left speed: " + leftSpeed);
+		System.err.println("Right speed: " + (int)rightSpeed + ", Left speed: " + (int)leftSpeed);
 		
 		this.driveDirect(rightSpeed, leftSpeed);
 
@@ -590,6 +582,17 @@ public class CreateRobot {
 		
 		return (char) ((0x000000FF & ((int)hb)) << 8 | (0x000000FF & ((int)lb)));
 		
+	}
+	
+	/**
+	 * This functions simply combines two incoming bytes into a signed int value.
+	 * @param hb
+	 * @param lb
+	 * @return
+	 */
+	private final int bytesToInt(byte hb, byte lb){
+		
+		return (int) ((int)hb << 8) | (int)lb;
 	}
 	
 	public static void main(String[] args){

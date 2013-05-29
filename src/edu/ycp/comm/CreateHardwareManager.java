@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import edu.ycp.ActuatorCommand;
 import edu.ycp.CreateRobot.CreateMode;
-import edu.ycp.InputPacket.InputCommand;
+import edu.ycp.InputCommand;
 import edu.ycp.ModePacket;
 import edu.ycp.ModePacket.ModeCommand;
 
