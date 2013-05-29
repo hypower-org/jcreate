@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import edu.ycp.comm.CreateHardwareManager;
 
@@ -41,8 +42,7 @@ public class CreateRobot {
 	private volatile boolean robotStopRequested;	
 	
 	private final ExecutorService executor; // executor service for the data and command Q management
-	private final Vector<Future<?>> tasks;
-	
+	private final Vector<Future<?>> tasks;	
 	
 	/*
 	 * Private, volatile data members for outside access.
@@ -110,6 +110,7 @@ public class CreateRobot {
 		commandQueue = new LinkedBlockingQueue<ByteBuffer>();
 		
 		hardwareManager = new CreateHardwareManager(serialPortName, initMode, dataQueue, commandQueue);
+		// We need to block here until the serial port is online.
 		while(!hardwareManager.isInitialized());
 		
 		// TODO: implement mode initialization
@@ -117,7 +118,7 @@ public class CreateRobot {
 		
 		dataParser = new SensorDataParser();
 		
-		this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		
 		robotStopRequested = false;		
 		
@@ -129,7 +130,7 @@ public class CreateRobot {
 				// take from the command Q - it blocks if the queue is full
 				while(true){
 					
-				//TODO: need to develop this!
+				//TODO: This runner may not be needed!
 					
 //					try {
 //						
@@ -142,6 +143,7 @@ public class CreateRobot {
 
 			
 		};
+		
 		Runnable dataRunner = new Runnable(){
 
 			@Override
@@ -193,6 +195,7 @@ public class CreateRobot {
 		};
 		
 		tasks = new Vector<Future<?>>();
+		tasks.add(this.executor.submit(hardwareManager));
 		tasks.add(this.executor.submit(cmdRunner));
 		tasks.add(this.executor.submit(dataRunner));
 		tasks.add(this.executor.submit(createRunner));
@@ -663,7 +666,6 @@ public class CreateRobot {
 			execCount++;
 		}
 		robot.requestStop();
-		
 	}
 
 }

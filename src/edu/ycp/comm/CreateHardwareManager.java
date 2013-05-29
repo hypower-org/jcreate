@@ -45,7 +45,7 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	private boolean initialized = false;
 	
 	private volatile boolean stopRequested;
-	private Thread mainThread;
+//	private Thread mainThread;
 	
 	public CreateHardwareManager(String portName, CreateMode desMode, BlockingQueue<ByteBuffer> retQueue, BlockingQueue<ByteBuffer> commandQueue){
 		
@@ -101,9 +101,6 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 			}
 			
 			stopRequested = false;	
-			mainThread = new Thread(this);
-			mainThread.setName(CreateHardwareManager.class.getSimpleName());
-			mainThread.start();
 
 			initialized = true;
 					
@@ -160,7 +157,6 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 	 */
 	private final void writeBuffer(ByteBuffer bb) {
 		try {
-//			System.out.println(Thread.currentThread().getName() + " writing buffer");
 			this.serialOutStream.write(bb.array());
 			
 		} catch (IOException e) {
@@ -186,9 +182,9 @@ public class CreateHardwareManager implements SerialPortEventListener, Runnable 
 		writeBuffer(stopBuf);
 
 		stopRequested = true;
-		if(mainThread != null){
-			mainThread.interrupt();
-		}
+//		if(mainThread != null){
+//			mainThread.interrupt();
+//		}
 	}
 
 	public boolean isInitialized() {
