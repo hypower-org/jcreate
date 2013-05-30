@@ -118,38 +118,16 @@ public class CreateRobot {
 		
 		dataParser = new SensorDataParser();
 		
-		executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		executor = Executors.newFixedThreadPool(3);
 		
 		robotStopRequested = false;		
-		
-		// create the command thread for issuing commands to the robot.
-		Runnable cmdRunner = new Runnable(){
-
-			@Override
-			public void run() {
-				// take from the command Q - it blocks if the queue is full
-				while(true){
-					
-				//TODO: This runner may not be needed!
-					
-//					try {
-//						
-//					} catch (InterruptedException e) {
-//						System.err.println(Thread.currentThread().getName() + ": Command task stopped.");
-//					}
-				}
-				
-			}
-
-			
-		};
 		
 		Runnable dataRunner = new Runnable(){
 
 			@Override
 			public void run() {
 				// take from the data Q - blocks if there is no command
-				while(true){
+				while(!Thread.currentThread().isInterrupted()){
 					try{
 						ByteBuffer incomingBuf = dataQueue.take();
 						
@@ -164,6 +142,7 @@ public class CreateRobot {
 							
 						}
 					} catch(InterruptedException e){
+						Thread.currentThread().interrupt();
 						System.err.println(Thread.currentThread().getName() + ": Data task stopped.");
 					}
 				}
@@ -196,7 +175,6 @@ public class CreateRobot {
 		
 		tasks = new Vector<Future<?>>();
 		tasks.add(this.executor.submit(hardwareManager));
-		tasks.add(this.executor.submit(cmdRunner));
 		tasks.add(this.executor.submit(dataRunner));
 		tasks.add(this.executor.submit(createRunner));
 		
@@ -627,15 +605,15 @@ public class CreateRobot {
 				System.out.println("Caster dropped!");
 			}
 			
-			System.out.println("Charging state: " + robot.getCurrChargeState());
-			System.out.println("Battery voltage: " + robot.getBatteryVoltage() + " mV");
-			System.out.println("Battery current "+ robot.getBatteryCurrent() + " mA");
-			System.out.println("Battery temp  "+ robot.getBatteryTemp() + " degrees");
-			System.out.println("Battery charge " + robot.getBatteryCharge() + " mAh");
-			System.out.println("Battery capacity " + robot.getBatteryCapacity() + " mAh");
+//			System.out.println("Charging state: " + robot.getCurrChargeState());
+//			System.out.println("Battery voltage: " + robot.getBatteryVoltage() + " mV");
+//			System.out.println("Battery current "+ robot.getBatteryCurrent() + " mA");
+//			System.out.println("Battery temp  "+ robot.getBatteryTemp() + " degrees");
+//			System.out.println("Battery charge " + robot.getBatteryCharge() + " mAh");
+//			System.out.println("Battery capacity " + robot.getBatteryCapacity() + " mAh");
 			
-			System.out.println("Current requested velocity " + robot.getReqVelocity());
-			System.out.println("Current requested radius " + robot.getReqRadius());
+//			System.out.println("Current requested velocity " + robot.getReqVelocity());
+//			System.out.println("Current requested radius " + robot.getReqRadius());
 
 			System.out.println("Current requested left wheel velocity " + robot.getReqLeftVelocity());
 			System.out.println("Current requested right wheel velocity " + robot.getReqRightVelocity());
